@@ -1,0 +1,23 @@
+<% layout('layout') %>
+
+<section class="hero">
+  <div class="hero-text">
+    <h1>Cowabunga Pizza</h1>
+    <p><%= heroTagline %></p>
+    <a href="/menu" class="btn-primary">Order Now</a>
+  </div>
+</section>
+
+<section class="featured">
+  <h2>Featured Pies</h2>
+  <div class="card-grid">
+    <% featured.forEach(item => { %>
+      <article class="card">
+        <h3><%= item.name %></h3>
+        <p><%= item.description %></p>
+        <p class="price">$<%= item.price.toFixed(2) %></p>
+        <a href="/menu" class="btn-secondary">Add to Order</a>
+      </article>
+    <% }) %>
+  </div>
+</section>

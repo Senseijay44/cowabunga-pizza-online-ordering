@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %> | Cowabunga Pizza</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Quick CSS framework if allowed (optional) -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="/" class="brand">Cowabunga Pizza</a>
+      <ul class="nav-links">
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/cart">Cart</a></li>
+        <li><a href="/checkout">Checkout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="content">
+    <%- body %>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <%= new Date().getFullYear() %> Cowabunga Pizza. Powered by pizza.</p>
+  </footer>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>
