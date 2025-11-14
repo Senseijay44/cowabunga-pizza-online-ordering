@@ -2,6 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const expressLayouts = require('express-ejs-layouts');
 
 const webRoutes = require('./routes/web');
 const apiRoutes = require('./routes/api');
@@ -12,6 +13,8 @@ const PORT = process.env.PORT || 3000;
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(expressLayouts);
+app.set('layout', 'layout'); // this will use views/layout.ejs
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
