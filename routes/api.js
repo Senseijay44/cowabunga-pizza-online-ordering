@@ -52,54 +52,69 @@ router.post('/price', express.json(), (req, res) => {
   }
 });
 
+// Helper to ensure cart + basic totals
+function getCartFromSession(req) {
+  if (!req.session.cart) {
+    req.session.cart = [];
+  }
+  return req.session.cart;
+}
+
+function computeTotals(cart) {
+  const subtotal = cart.reduce(
+    (sum, item) => sum + item.price * item.qty,
+    0
+  );
+  const total = subtotal * 1.086; // approx 8.6% tax
+  return { subtotal, total };
+}
+
 // POST /api/cart/items – add item to cart
 router.post('/cart/items', (req, res) => {
   const { name, meta, price, qty } = req.body;
 
-  if (!name || !price) {
+  if (!name || typeof price === 'undefined') {
     return res.status(400).json({ error: 'Invalid cart item payload' });
   }
 
-  if (!req.session.cart) {
-    req.session.cart = [];
-  }
+  const cart = getCartFromSession(req);
 
   const newItem = {
     id: Date.now().toString(), // simple unique ID for now
     name,
     meta: meta || '',
     price: Number(price),
-    qty: Number(qty) || 1
+    qty: Number(qty) || 1,
   };
 
-  const existing = req.session.cart.find(
-    item => item.name === newItem.name && item.meta === newItem.meta
+  const existing = cart.find(
+    (item) => item.name === newItem.name && item.meta === newItem.meta
   );
 
   if (existing) {
     existing.qty += newItem.qty;
   } else {
-    req.session.cart.push(newItem);
+    cart.push(newItem);
   }
+
+  const { subtotal, total } = computeTotals(cart);
 
   return res.status(201).json({
     message: 'Item added to cart',
-    cart: req.session.cart,
-    item: newItem
+    cart,
+    item: newItem,
+    subtotal,
+    total,
   });
 });
 
-// PATCH /api/cart/items/:id – update quantity or remove item
+// PATCH /api/cart/items/:id – update quantity (or remove if 0)
 router.patch('/cart/items/:id', (req, res) => {
   const { id } = req.params;
   const { delta, qty } = req.body;
 
-  if (!req.session.cart) {
-    req.session.cart = [];
-  }
-
-  const cart = req.session.cart;
-  const index = cart.findIndex(item => item.id === id);
+  const cart = getCartFromSession(req);
+  const index = cart.findIndex((item) => item.id === id);
 
   if (index === -1) {
     return res.status(404).json({ error: 'Cart item not found' });
@@ -126,34 +141,47 @@ router.patch('/cart/items/:id', (req, res) => {
     cart[index].qty = newQty;
   }
 
-  req.session.cart = cart;
-
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.qty,
-    0
-  );
+  const { subtotal, total } = computeTotals(cart);
 
   return res.json({
     message: 'Cart item updated',
     cart,
     subtotal,
-    total: subtotal * 1.086
+    total,
+  });
+});
+
+// DELETE /api/cart/items/:id – remove an item entirely
+router.delete('/cart/items/:id', (req, res) => {
+  const { id } = req.params;
+  const cart = getCartFromSession(req);
+
+  const index = cart.findIndex((item) => item.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Cart item not found' });
+  }
+
+  cart.splice(index, 1);
+
+  const { subtotal, total } = computeTotals(cart);
+
+  return res.json({
+    message: 'Cart item removed',
+    cart,
+    subtotal,
+    total,
   });
 });
 
 // GET /api/cart – return full cart
 router.get('/cart', (req, res) => {
-  const cart = req.session.cart || [];
-
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.qty,
-    0
-  );
+  const cart = getCartFromSession(req);
+  const { subtotal, total } = computeTotals(cart);
 
   return res.json({
     items: cart,
     subtotal,
-    total: subtotal * 1.086 // simple tax calc
+    total,
   });
 });
 

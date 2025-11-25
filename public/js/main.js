@@ -97,6 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="cb-qty-control">
             <button
               type="button"
+              class="js-cart-remove"
+              data-id="${item.id}"
+              aria-label="Remove item"
+            >✕</button>
+            <button
+              type="button"
               class="js-cart-minus"
               data-index="${index}"
               data-id="${item.id}"
@@ -114,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cartItemsEl.appendChild(li);
     });
 
-    // Attach handlers for the quantity buttons – now using backend PATCH
+    // Attach handlers for the quantity buttons – backend PATCH
     cartItemsEl.querySelectorAll('.js-cart-minus').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
@@ -128,6 +134,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = btn.dataset.id;
         if (!id) return;
         updateCartItem(id, +1);
+      });
+    });
+
+    // Attach handler for remove button – backend DELETE
+    cartItemsEl.querySelectorAll('.js-cart-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        if (!id) return;
+        deleteCartItem(id);
       });
     });
 
@@ -178,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // NEW: update existing item (for +/- qty)
+  // Update existing item (for +/- qty) using PATCH
   async function updateCartItem(id, delta) {
     try {
       const res = await fetch(`/api/cart/items/${encodeURIComponent(id)}`, {
@@ -198,6 +213,27 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCart();
     } catch (err) {
       console.error('Error updating cart item:', err);
+    }
+  }
+
+  // Remove item entirely using DELETE
+  async function deleteCartItem(id) {
+    try {
+      const res = await fetch(`/api/cart/items/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) {
+        console.error('Failed to delete cart item:', res.status);
+        return;
+      }
+
+      const data = await res.json();
+      cart.length = 0;
+      (data.cart || []).forEach(item => cart.push(item));
+      renderCart();
+    } catch (err) {
+      console.error('Error deleting cart item:', err);
     }
   }
 
