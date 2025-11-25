@@ -1,5 +1,3 @@
-// public/js/main.js
-
 console.log('Cowabunga Pizza client script loaded with cart + builder.');
 
 // Behavior for the enhanced menu page and dynamic pizza builder
@@ -33,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- CART STATE ----
   const TAX_RATE = 0.086; // 8.6% approx
-  const cart = [];
+  const cart = []; // local mirror of server cart
 
   function money(n) {
     return `$${n.toFixed(2)}`;
@@ -97,56 +95,110 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="cb-cart-item-right">
           <span class="cb-cart-item-price">${money(item.price * item.qty)}</span>
           <div class="cb-qty-control">
-            <button type="button" class="js-cart-minus" data-index="${index}">-</button>
+            <button
+              type="button"
+              class="js-cart-minus"
+              data-index="${index}"
+              data-id="${item.id}"
+            >-</button>
             <span>${item.qty}</span>
-            <button type="button" class="js-cart-plus" data-index="${index}">+</button>
+            <button
+              type="button"
+              class="js-cart-plus"
+              data-index="${index}"
+              data-id="${item.id}"
+            >+</button>
           </div>
         </div>
       `;
       cartItemsEl.appendChild(li);
     });
 
-    // Attach handlers for the quantity buttons
+    // Attach handlers for the quantity buttons – now using backend PATCH
     cartItemsEl.querySelectorAll('.js-cart-minus').forEach(btn => {
       btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.index, 10);
-        if (!Number.isNaN(idx) && cart[idx]) {
-          cart[idx].qty -= 1;
-          if (cart[idx].qty <= 0) {
-            cart.splice(idx, 1);
-          }
-          renderCart();
-        }
+        const id = btn.dataset.id;
+        if (!id) return;
+        updateCartItem(id, -1);
       });
     });
 
     cartItemsEl.querySelectorAll('.js-cart-plus').forEach(btn => {
       btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.index, 10);
-        if (!Number.isNaN(idx) && cart[idx]) {
-          cart[idx].qty += 1;
-          renderCart();
-        }
+        const id = btn.dataset.id;
+        if (!id) return;
+        updateCartItem(id, +1);
       });
     });
 
     updateCartSummaryUI();
   }
 
-  function addItemToCart(newItem) {
-    const key = `${newItem.name}||${newItem.meta || ''}`;
-    const existing = cart.find(item => `${item.name}||${item.meta || ''}` === key);
-    if (existing) {
-      existing.qty += newItem.qty || 1;
-    } else {
-      cart.push({
-        name: newItem.name,
-        meta: newItem.meta || '',
-        price: newItem.price,
-        qty: newItem.qty || 1
-      });
+  // Load cart from server on page load
+  async function loadCartFromServer() {
+    try {
+      const res = await fetch('/api/cart');
+      if (!res.ok) {
+        console.error('Failed to load cart from server:', res.status);
+        renderCart(); // render empty/local
+        return;
+      }
+      const data = await res.json();
+      cart.length = 0;
+      (data.items || []).forEach(item => cart.push(item));
+      renderCart();
+    } catch (err) {
+      console.error('Error loading cart from server:', err);
+      renderCart();
     }
-    renderCart();
+  }
+
+  // Add new item using backend API
+  async function addItemToCart(newItem) {
+    try {
+      const res = await fetch('/api/cart/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newItem)
+      });
+
+      if (!res.ok) {
+        console.error('Failed to add item to cart:', res.status);
+        return;
+      }
+
+      const data = await res.json();
+
+      cart.length = 0;
+      (data.cart || []).forEach(item => cart.push(item));
+
+      renderCart();
+    } catch (err) {
+      console.error('Error adding item to cart:', err);
+    }
+  }
+
+  // NEW: update existing item (for +/- qty)
+  async function updateCartItem(id, delta) {
+    try {
+      const res = await fetch(`/api/cart/items/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta })
+      });
+
+      if (!res.ok) {
+        console.error('Failed to update cart item:', res.status);
+        return;
+      }
+
+      const data = await res.json();
+      cart.length = 0;
+      (data.cart || []).forEach(item => cart.push(item));
+      renderCart();
+    } catch (err) {
+      console.error('Error updating cart item:', err);
+    }
   }
 
   // ---- BUILDER STATE ----
@@ -308,5 +360,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  renderCart();
+  // INITIAL LOAD: sync cart from backend session
+  loadCartFromServer();
 });

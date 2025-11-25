@@ -1,4 +1,5 @@
 // server.js
+const session = require('express-session');
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -20,6 +21,14 @@ app.set('layout', 'layout'); // this will use views/layout.ejs
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'cowabunga-secret',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 1000 * 60 * 60 } // 1 hour
+  })
+);
 
 // Routes
 app.use('/', webRoutes);
