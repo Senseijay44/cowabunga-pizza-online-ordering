@@ -15,3 +15,108 @@
     <% }) %>
   </div>
 </section>
+
+<section class="menu-page builder-section">
+  <h1>Build Your Cowabunga Pizza</h1>
+
+  <div class="builder-grid">
+    <!-- Left: builder controls -->
+    <div class="builder-controls">
+      <div class="builder-row">
+        <label for="builder-size">Size</label>
+        <select id="builder-size">
+          <!-- Options will be injected by builder.js -->
+        </select>
+      </div>
+
+      <div class="builder-row">
+        <label for="builder-base">Crust</label>
+        <select id="builder-base">
+          <!-- Options will be injected by builder.js -->
+        </select>
+      </div>
+
+      <div class="builder-row">
+        <label for="builder-sauce">Sauce</label>
+        <select id="builder-sauce">
+          <!-- Options will be injected by builder.js -->
+        </select>
+      </div>
+
+      <div class="builder-row">
+        <label for="builder-cheese">Cheese</label>
+        <select id="builder-cheese">
+          <!-- Options will be injected by builder.js -->
+        </select>
+      </div>
+
+      <div class="builder-row">
+        <label>Toppings</label>
+        <div id="builder-toppings" class="toppings-grid">
+          <!-- Topping checkboxes will be injected by builder.js -->
+        </div>
+      </div>
+
+      <div class="builder-row">
+        <label for="builder-quantity">Quantity</label>
+        <input
+          id="builder-quantity"
+          type="number"
+          min="1"
+          value="1"
+        />
+      </div>
+    </div>
+
+    <!-- Right: summary / price / preview / actions -->
+    <div class="builder-summary">
+      <div>
+        <h2>Your Pizza Summary</h2>
+
+        <div class="pizza-preview-wrapper">
+          <div class="pizza-preview" id="pizza-preview"></div>
+        </div>
+
+        <p>
+          Current price:
+          <strong id="builder-price">Loading price...</strong>
+        </p>
+
+        <div class="builder-preview-card">
+          <h3>Current Build</h3>
+
+          <div class="preview-row">
+            <span class="preview-label">Size</span>
+            <span class="preview-value" id="preview-size">–</span>
+          </div>
+
+          <div class="preview-row">
+            <span class="preview-label">Crust</span>
+            <span class="preview-value" id="preview-base">–</span>
+          </div>
+
+          <div class="preview-row">
+            <span class="preview-label">Sauce</span>
+            <span class="preview-value" id="preview-sauce">–</span>
+          </div>
+
+          <div class="preview-row">
+            <span class="preview-label">Cheese</span>
+            <span class="preview-value" id="preview-cheese">–</span>
+          </div>
+
+          <div class="preview-row preview-row-toppings">
+            <span class="preview-label">Toppings</span>
+            <div class="preview-toppings" id="preview-toppings">
+              <span class="preview-value preview-placeholder">None selected</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="builder-add-to-cart">
+        Add Custom Pizza to Cart
+      </button>
+    </div>
+  </div>
+</section>

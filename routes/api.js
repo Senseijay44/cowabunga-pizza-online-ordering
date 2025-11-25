@@ -2,22 +2,65 @@
 const express = require('express');
 const router = express.Router();
 
-// Same dummy data for now
+const menuConfig = require('../config/menuConfig.js');
+const { calculatePizzaPrice } = require('../utils/pizzaPricing.js');
+
+// Same dummy data for now – preset pizzas
 const menuItems = [
-  { id: 1, name: 'Cowabunga Classic', description: 'Pepperoni, mozzarella, red sauce.', price: 14.99 },
-  { id: 2, name: 'Turtle Supreme', description: 'Sausage, pepperoni, peppers, onions, olives.', price: 17.99 },
-  { id: 3, name: 'Veggie Dojo', description: 'Mushrooms, peppers, onions, olives, spinach.', price: 15.99 }
+  {
+    id: 1,
+    name: 'Cowabunga Classic',
+    description: 'Pepperoni, mozzarella, red sauce.',
+    price: 14.99,
+  },
+  {
+    id: 2,
+    name: 'Turtle Supreme',
+    description: 'Sausage, pepperoni, peppers, onions, olives.',
+    price: 17.99,
+  },
+  {
+    id: 3,
+    name: 'Veggie Dojo',
+    description: 'Mushrooms, peppers, onions, olives, spinach.',
+    price: 15.99,
+  },
 ];
 
-// GET /api/menu – retrieve menu items
+// GET /api/menu – full menu config for builder + preset pizzas
 router.get('/menu', (req, res) => {
-  res.json(menuItems);
+  res.json({
+    // config used by the builder
+    sizes: menuConfig.SIZES,
+    bases: menuConfig.BASES,
+    sauces: menuConfig.SAUCES,
+    cheeses: menuConfig.CHEESES,
+    toppings: menuConfig.TOPPINGS,
+    rules: menuConfig.BUILDER_RULES,
+
+    // your existing hard-coded pizzas
+    presetPizzas: menuItems,
+  });
+});
+
+// NEW: POST /api/price – calculate price for a pizza config
+router.post('/price', express.json(), (req, res) => {
+  try {
+    const pizzaState = req.body; // { sizeId, baseId, sauceId, cheeseId, toppings[], quantity }
+    const pricing = calculatePizzaPrice(pizzaState);
+    res.json(pricing);
+  } catch (err) {
+    console.error('Price calculation error:', err);
+    res.status(400).json({ error: 'Invalid pizza configuration' });
+  }
 });
 
 // POST /api/cart/items – stub
 router.post('/cart/items', (req, res) => {
   // TODO: validate body, add item to cart (session/DB)
-  res.status(201).json({ message: 'Item added to cart (stub)', body: req.body });
+  res
+    .status(201)
+    .json({ message: 'Item added to cart (stub)', body: req.body });
 });
 
 // PATCH /api/cart/items/:id – stub
