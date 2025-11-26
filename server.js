@@ -1,12 +1,13 @@
 // server.js
-const session = require('express-session');
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
+const session = require('express-session');
 
 const webRoutes = require('./routes/web');
 const apiRoutes = require('./routes/api');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,13 +27,14 @@ app.use(
     secret: process.env.SESSION_SECRET || 'cowabunga-secret',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 1000 * 60 * 60 } // 1 hour
+    cookie: { maxAge: 1000 * 60 * 60 }, // 1 hour
   })
 );
 
 // Routes
 app.use('/', webRoutes);
 app.use('/api', apiRoutes);
+app.use('/admin', adminRoutes);
 
 // Basic 404 handler
 app.use((req, res, next) => {

@@ -41,6 +41,14 @@ function getOrderById(id) {
 }
 
 /**
+ * Get all orders (most recent first).
+ */
+function getAllOrders() {
+  // shallow copy so no one mutates the internal array by accident
+  return [...orders].sort((a, b) => b.id - a.id);
+}
+
+/**
  * Update the status of an order.
  * @param {number|string} id - order id
  * @param {string} newStatus - one of STATUS values
@@ -65,6 +73,7 @@ function updateOrderStatus(id, newStatus) {
 module.exports = {
   createOrder,
   getOrderById,
+  getAllOrders,
   updateOrderStatus,
   STATUS,
 };
