@@ -12,48 +12,85 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// View engine setup
+// ------------------------------------------------------
+// VIEW ENGINE SETUP
+// ------------------------------------------------------
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
-app.set('layout', 'layout'); // this will use views/layout.ejs
+app.set('layout', 'layout'); // uses views/layout.ejs
 
-// Middleware
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// ------------------------------------------------------
+// SESSION CONFIG (HARDENED VERSION)
+// ------------------------------------------------------
+if (!process.env.SESSION_SECRET) {
+  console.warn(
+    'WARNING: SESSION_SECRET is not set. Using a weak fallback. DO NOT USE THIS IN PRODUCTION.'
+  );
+}
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'cowabunga-secret',
+    secret: process.env.SESSION_SECRET || 'cowabunga-secret-dev-only',
     resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 1000 * 60 * 60 }, // 1 hour
+
+    // Only create sessions when needed
+    saveUninitialized: false,
+
+    cookie: {
+      maxAge: 1000 * 60 * 60, // 1 hour
+      httpOnly: true,         // Prevent JS access to cookies
+      sameSite: 'lax',        // Protects against CSRF basics
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+    },
+
+    // Reset session expiration on each request
+    rolling: true,
   })
 );
 
-// Routes
+// ------------------------------------------------------
+// MIDDLEWARE
+// ------------------------------------------------------
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ------------------------------------------------------
+// ROUTES
+// ------------------------------------------------------
 app.use('/', webRoutes);
 app.use('/api', apiRoutes);
 app.use('/admin', adminRoutes);
 
-// Basic 404 handler
+// ------------------------------------------------------
+// 404 HANDLER
+// ------------------------------------------------------
 app.use((req, res, next) => {
   res.status(404);
+
   if (req.accepts('html')) {
     return res.render('404', { title: 'Page Not Found' });
   }
+
   if (req.accepts('json')) {
     return res.json({ error: 'Not found' });
   }
-  res.type('txt').send('Not found');
+
+  return res.type('txt').send('Not found');
 });
 
-// Basic error handler
+// ------------------------------------------------------
+// ERROR HANDLER
+// ------------------------------------------------------
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).render('500', { title: 'Server Error' });
 });
 
+// ------------------------------------------------------
+// START SERVER
+// ------------------------------------------------------
 app.listen(PORT, () => {
   console.log(`Cowabunga Pizza server running on http://localhost:${PORT}`);
 });

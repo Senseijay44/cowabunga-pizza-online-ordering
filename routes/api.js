@@ -11,9 +11,9 @@ const {
   STATUS,
 } = require('../utils/orderStore');
 
-const ALLOWED_STATUSES = Object.values(STATUS);
-
 const { requireAdminApi } = require('../middleware/auth');
+
+const ALLOWED_STATUSES = Object.values(STATUS);
 
 // Same dummy data for now – preset pizzas
 const menuItems = [
@@ -36,6 +36,57 @@ const menuItems = [
     price: 15.99,
   },
 ];
+
+// ------------------------------------------------------
+// Helpers
+// ------------------------------------------------------
+
+// Normalize cart items and apply basic sanity checks
+function normalizeCartItems(cart) {
+  if (!Array.isArray(cart)) return [];
+
+  return cart
+    .map((item) => {
+      const price = Number(item.price);
+      const qty = Number(item.qty || 1);
+
+      if (!Number.isFinite(price) || price <= 0) {
+        return null;
+      }
+
+      if (!Number.isFinite(qty) || qty <= 0) {
+        return null;
+      }
+
+      return {
+        name: String(item.name || 'Custom Pizza'),
+        meta: String(item.meta || ''),
+        price,
+        qty,
+      };
+    })
+    .filter(Boolean);
+}
+
+function getCartFromSession(req) {
+  if (!req.session.cart) {
+    req.session.cart = [];
+  }
+  return req.session.cart;
+}
+
+function computeTotals(cart) {
+  const subtotal = cart.reduce(
+    (sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1),
+    0
+  );
+  const total = subtotal * 1.086; // approx 8.6% tax
+  return { subtotal, total };
+}
+
+// ------------------------------------------------------
+// Menu + Pricing
+// ------------------------------------------------------
 
 // GET /api/menu – full menu config for builder + preset pizzas
 router.get('/menu', (req, res) => {
@@ -62,24 +113,33 @@ router.post('/price', express.json(), (req, res) => {
   }
 });
 
+// ------------------------------------------------------
+// Checkout + Orders
+// ------------------------------------------------------
+
 /**
  * EP-004: Checkout API
  * POST /api/checkout
- * Expects JSON: { customer: { name, phone, address }, cart: [...], totals: { subtotal, tax, total } }
+ * Expects JSON: { customer: { name, phone, address }, cart: [...] }
+ * Totals are recomputed on the server.
  */
 router.post('/checkout', express.json(), (req, res) => {
   try {
-    const { customer, cart } = req.body;
+    const { customer, cart } = req.body || {};
 
     if (!customer || !customer.name || !customer.phone || !customer.address) {
       return res.status(400).json({ error: 'Missing customer information' });
     }
 
-    const items = Array.isArray(cart) ? cart : [];
+    const items = normalizeCartItems(cart);
+
+    if (items.length === 0) {
+      return res.status(400).json({ error: 'Cart is empty or invalid' });
+    }
 
     // Recompute totals on the server
     const subtotal = items.reduce(
-      (sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1),
+      (sum, item) => sum + item.price * item.qty,
       0
     );
     const taxRate = 0.086;
@@ -145,72 +205,70 @@ router.get('/orders/:id/details', (req, res) => {
   return res.json(order);
 });
 
-// PATCH /api/orders/:id/status – update order status in the workflow
-router.patch('/orders/:id/status', requireAdminApi, express.json(), (req, res) => {
-  const id = Number(req.params.id);
-  const { status } = req.body || {};
+// PATCH /api/orders/:id/status – update order status in the workflow (admin only)
+router.patch(
+  '/orders/:id/status',
+  requireAdminApi,
+  express.json(),
+  (req, res) => {
+    const id = Number(req.params.id);
+    const { status } = req.body || {};
 
-  if (Number.isNaN(id)) {
-    return res.status(400).json({ error: 'Invalid order id' });
-  }
-
-  if (!status || typeof status !== 'string') {
-    return res.status(400).json({ error: 'Missing status in request body' });
-  }
-
-  const allowedStatuses = Object.values(STATUS);
-  if (!allowedStatuses.includes(status)) {
-    return res.status(400).json({
-      error: 'Invalid status value',
-      allowed: allowedStatuses,
-    });
-  }
-
-  try {
-    const updated = updateOrderStatus(id, status);
-    if (!updated) {
-      return res.status(404).json({ error: 'Order not found' });
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid order id' });
     }
 
-    return res.json({
-      orderId: updated.id,
-      status: updated.status,
-      updatedAt: updated.updatedAt,
-    });
-  } catch (err) {
-    console.error('Order status update error:', err);
-    return res.status(500).json({ error: 'Failed to update order status' });
+    if (!status || typeof status !== 'string') {
+      return res.status(400).json({ error: 'Missing status in request body' });
+    }
+
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json({
+        error: 'Invalid status value',
+        allowed: ALLOWED_STATUSES,
+      });
+    }
+
+    try {
+      const updated = updateOrderStatus(id, status);
+      if (!updated) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      return res.json({
+        orderId: updated.id,
+        status: updated.status,
+        updatedAt: updated.updatedAt,
+      });
+    } catch (err) {
+      console.error('Order status update error:', err);
+      return res.status(500).json({ error: 'Failed to update order status' });
+    }
   }
-});
+);
 
 // POST /api/payment – still a stub for now
 router.post('/payment', (req, res) => {
   res.json({ message: 'Payment processed (stub)', status: 'success' });
 });
 
-// Helper to ensure cart + basic totals
-function getCartFromSession(req) {
-  if (!req.session.cart) {
-    req.session.cart = [];
-  }
-  return req.session.cart;
-}
-
-function computeTotals(cart) {
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.qty,
-    0
-  );
-  const total = subtotal * 1.086; // approx 8.6% tax
-  return { subtotal, total };
-}
+// ------------------------------------------------------
+// Cart (session-based)
+// ------------------------------------------------------
 
 // POST /api/cart/items – add item to cart
 router.post('/cart/items', (req, res) => {
   const { name, meta, price, qty } = req.body;
 
-  if (!name || typeof price === 'undefined') {
+  const priceNum = Number(price);
+  const qtyNum = Number(qty || 1);
+
+  if (!name || !Number.isFinite(priceNum) || priceNum <= 0) {
     return res.status(400).json({ error: 'Invalid cart item payload' });
+  }
+
+  if (!Number.isFinite(qtyNum) || qtyNum <= 0) {
+    return res.status(400).json({ error: 'Invalid quantity value' });
   }
 
   const cart = getCartFromSession(req);
@@ -219,8 +277,8 @@ router.post('/cart/items', (req, res) => {
     id: Date.now().toString(), // simple unique ID for now
     name,
     meta: meta || '',
-    price: Number(price),
-    qty: Number(qty) || 1,
+    price: priceNum,
+    qty: qtyNum,
   };
 
   const existing = cart.find(
