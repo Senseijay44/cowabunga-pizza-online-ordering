@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %> | Cowabunga Pizza</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="/" class="brand">Cowabunga Pizza</a>
+      <ul class="nav-links">
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/cart">Cart</a></li>
+        <li><a href="/checkout">Checkout</a></li>
+        <li><a href="/admin/orders">Admin</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="content">
+    <section class="page-header">
+      <h1>Admin Login</h1>
+      <p>Restricted area. Pizza ops only.</p>
+    </section>
+
+    <section class="auth-card">
+      <% if (error) { %>
+        <div class="alert alert-error">
+          <%= error %>
+        </div>
+      <% } %>
+
+      <form action="/admin/login" method="POST" class="form">
+        <div class="form-row">
+          <label for="username">Username</label>
+          <input id="username" name="username" type="text" required />
+        </div>
+
+        <div class="form-row">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required />
+        </div>
+
+        <button type="submit" class="btn-primary btn-full">
+          Sign In
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2025 Cowabunga Pizza. Powered by pizza.</p>
+  </footer>
+</body>
+</html>

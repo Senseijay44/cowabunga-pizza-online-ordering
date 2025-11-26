@@ -13,6 +13,8 @@ const {
 
 const ALLOWED_STATUSES = Object.values(STATUS);
 
+const { requireAdminApi } = require('../middleware/auth');
+
 // Same dummy data for now – preset pizzas
 const menuItems = [
   {
@@ -136,7 +138,7 @@ router.get('/orders/:id/details', (req, res) => {
 });
 
 // PATCH /api/orders/:id/status – update order status in the workflow
-router.patch('/orders/:id/status', express.json(), (req, res) => {
+router.patch('/orders/:id/status', requireAdminApi, express.json(), (req, res) => {
   const id = Number(req.params.id);
   const { status } = req.body || {};
 
@@ -148,10 +150,11 @@ router.patch('/orders/:id/status', express.json(), (req, res) => {
     return res.status(400).json({ error: 'Missing status in request body' });
   }
 
-  if (!ALLOWED_STATUSES.includes(status)) {
+  const allowedStatuses = Object.values(STATUS);
+  if (!allowedStatuses.includes(status)) {
     return res.status(400).json({
       error: 'Invalid status value',
-      allowed: ALLOWED_STATUSES,
+      allowed: allowedStatuses,
     });
   }
 
