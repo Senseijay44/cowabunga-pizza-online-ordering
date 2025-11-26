@@ -4,6 +4,7 @@ const router = express.Router();
 
 const menuConfig = require('../config/menuConfig.js');
 const { calculatePizzaPrice } = require('../utils/pizzaPricing.js');
+const { createOrder, getOrderById } = require('../utils/orderStore');
 
 // Same dummy data for now – preset pizzas
 const menuItems = [
@@ -51,6 +52,90 @@ router.post('/price', express.json(), (req, res) => {
     res.status(400).json({ error: 'Invalid pizza configuration' });
   }
 });
+
+/**
+ * EP-004: Checkout API
+ * POST /api/checkout
+ * Expects JSON: { customer: { name, phone, address }, cart: [...], totals: { subtotal, tax, total } }
+ */
+router.post('/checkout', express.json(), (req, res) => {
+  try {
+    const { customer, cart, totals } = req.body;
+
+    if (!customer || !customer.name || !customer.phone || !customer.address) {
+      return res.status(400).json({ error: 'Missing customer information' });
+    }
+
+    const items = Array.isArray(cart) ? cart : [];
+    const safeTotals = totals || { subtotal: 0, tax: 0, total: 0 };
+
+    const order = createOrder({
+      customer: {
+        name: customer.name,
+        phone: customer.phone,
+        address: customer.address,
+      },
+      items,
+      totals: safeTotals,
+    });
+
+    return res.status(201).json({
+      message: 'Order created',
+      orderId: order.id,
+    });
+  } catch (err) {
+    console.error('Checkout API error:', err);
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
+// GET /api/orders/:id – simple order tracking
+router.get('/orders/:id', (req, res) => {
+  const id = Number(req.params.id);
+
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid order id' });
+  }
+
+  const order = getOrderById(id);
+  if (!order) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+
+  // Simple tracking payload – can be extended in later sprints
+  return res.json({
+    orderId: order.id,
+    status: order.status,       // e.g. "Pending", "In Progress", "Out for Delivery"
+    placedAt: order.createdAt,  // ISO timestamp
+    // For now, we can hard-code or stub an ETA
+    estimatedMinutes: 30
+  });
+});
+
+// GET /api/orders/:id/details – full order details (for future admin UI)
+router.get('/orders/:id/details', (req, res) => {
+  const id = Number(req.params.id);
+
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid order id' });
+  }
+
+  const order = getOrderById(id);
+  if (!order) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+
+  // Return the full stored order object
+  return res.json(order);
+});
+
+// POST /api/payment – still a stub for now
+router.post('/payment', (req, res) => {
+  res.json({ message: 'Payment processed (stub)', status: 'success' });
+});
+
+module.exports = router;
+
 
 // Helper to ensure cart + basic totals
 function getCartFromSession(req) {
@@ -183,21 +268,6 @@ router.get('/cart', (req, res) => {
     subtotal,
     total,
   });
-});
-
-// POST /api/checkout – stub
-router.post('/checkout', (req, res) => {
-  res.status(201).json({ message: 'Checkout created (stub)' });
-});
-
-// POST /api/payment – stub
-router.post('/payment', (req, res) => {
-  res.json({ message: 'Payment processed (stub)', status: 'success' });
-});
-
-// GET /api/orders/:id – stub
-router.get('/orders/:id', (req, res) => {
-  res.json({ orderId: req.params.id, status: 'pending (stub)' });
 });
 
 module.exports = router;

@@ -41,7 +41,13 @@
                 <button class="cb-btn cb-btn--outline cb-btn--sm js-open-builder" type="button">
                   Customize
                 </button>
-                <button class="cb-btn cb-btn--primary cb-btn--sm js-add-menu-item" type="button" data-id="<%= item.id %>" data-name="<%= item.name %>" data-price="<%= item.price.toFixed(2) %>">
+                <button
+                  class="cb-btn cb-btn--primary cb-btn--sm js-add-menu-item"
+                  type="button"
+                  data-id="<%= item.id %>"
+                  data-name="<%= item.name %>"
+                  data-price="<%= item.price.toFixed(2) %>"
+                >
                   Add to Cart
                 </button>
               </div>
@@ -68,7 +74,7 @@
     </div>
   </section>
 
-    <!-- Cart Sidebar / Panel -->
+  <!-- Cart Sidebar / Panel -->
   <aside class="cb-cart" id="cart-panel">
     <header class="cb-cart-header">
       <h2>Your Order</h2>
@@ -88,9 +94,10 @@
         <span>Total</span>
         <span id="cb-cart-total">$0.00</span>
       </div>
-      <button class="cb-btn cb-btn--primary cb-btn--full" type="button">
+      <!-- Updated: link to /checkout -->
+      <a href="/checkout" class="cb-btn cb-btn--primary cb-btn--full">
         Proceed to Checkout
-      </button>
+      </a>
     </div>
   </aside>
 </div>
