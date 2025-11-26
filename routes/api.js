@@ -69,14 +69,22 @@ router.post('/price', express.json(), (req, res) => {
  */
 router.post('/checkout', express.json(), (req, res) => {
   try {
-    const { customer, cart, totals } = req.body;
+    const { customer, cart } = req.body;
 
     if (!customer || !customer.name || !customer.phone || !customer.address) {
       return res.status(400).json({ error: 'Missing customer information' });
     }
 
     const items = Array.isArray(cart) ? cart : [];
-    const safeTotals = totals || { subtotal: 0, tax: 0, total: 0 };
+
+    // Recompute totals on the server
+    const subtotal = items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1),
+      0
+    );
+    const taxRate = 0.086;
+    const tax = subtotal * taxRate;
+    const total = subtotal + tax;
 
     const order = createOrder({
       customer: {
@@ -85,7 +93,7 @@ router.post('/checkout', express.json(), (req, res) => {
         address: customer.address,
       },
       items,
-      totals: safeTotals,
+      totals: { subtotal, tax, total },
     });
 
     return res.status(201).json({

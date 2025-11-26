@@ -8,7 +8,11 @@ const { getAllOrders, STATUS } = require('../utils/orderStore');
 const { requireAdmin } = require('../middleware/auth');
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '';
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
+
+if (!ADMIN_PASSWORD_HASH) {
+  console.warn('WARNING: ADMIN_PASSWORD_HASH not set. Admin login will be disabled.');
+}
 
 // GET /admin/login – show login form
 router.get('/login', (req, res) => {
@@ -43,6 +47,13 @@ router.post('/login', async (req, res) => {
     });
   }
 
+  if (!ADMIN_PASSWORD_HASH) {
+    return res.status(500).render('admin-login', {
+      title: 'Admin Login',
+      error: 'Admin login is not configured on this server.',
+    });
+  }
+
   try {
     const match = await bcrypt.compare(pass, ADMIN_PASSWORD_HASH);
     if (!match) {
@@ -52,11 +63,21 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Success – flag session as admin
-    req.session.isAdmin = true;
-    req.session.adminUser = ADMIN_USERNAME;
+    // 🔐 Regenerate session ID on successful login
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('Session regenerate error:', err);
+        return res.status(500).render('admin-login', {
+          title: 'Admin Login',
+          error: 'Something went wrong. Please try again.',
+        });
+      }
 
-    return res.redirect('/admin/orders');
+      req.session.isAdmin = true;
+      req.session.adminUser = ADMIN_USERNAME;
+
+      return res.redirect('/admin/orders');
+    });
   } catch (err) {
     console.error('Admin login error:', err);
     return res.status(500).render('admin-login', {
@@ -65,6 +86,7 @@ router.post('/login', async (req, res) => {
     });
   }
 });
+
 
 // GET /admin/logout – clear session
 router.get('/logout', (req, res) => {
