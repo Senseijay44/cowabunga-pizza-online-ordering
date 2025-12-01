@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 
 const menuConfig = require('../config/menuConfig.js');
+const {
+  getAvailableMenuConfig,
+} = require('../utils/menuConfigStore');
 const { calculatePizzaPrice } = require('../utils/pizzaPricing.js');
 const {
   DEFAULT_TAX_RATE,
@@ -18,6 +21,7 @@ const {
 } = require('../utils/orderStore');
 const {
   getMenuItems,
+  getAvailableMenuItems,
   addMenuItem,
   updateMenuItem,
   deleteMenuItem,
@@ -49,7 +53,7 @@ router.get('/admin/menu', requireAdminApi, (req, res) => {
 });
 
 router.post('/admin/menu', requireAdminApi, express.json(), (req, res) => {
-  const { name, description = '', price } = req.body || {};
+  const { name, description = '', price, isAvailable = true } = req.body || {};
 
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'Name is required' });
@@ -64,6 +68,7 @@ router.post('/admin/menu', requireAdminApi, express.json(), (req, res) => {
     name: name.trim(),
     description: description.trim(),
     price: priceNum,
+    isAvailable,
   });
 
   return res.status(201).json({ item: created });
@@ -71,7 +76,7 @@ router.post('/admin/menu', requireAdminApi, express.json(), (req, res) => {
 
 router.put('/admin/menu/:id', requireAdminApi, express.json(), (req, res) => {
   const { id } = req.params;
-  const { name, description = '', price } = req.body || {};
+  const { name, description = '', price, isAvailable = true } = req.body || {};
 
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'Name is required' });
@@ -86,6 +91,7 @@ router.put('/admin/menu/:id', requireAdminApi, express.json(), (req, res) => {
     name: name.trim(),
     description: description.trim(),
     price: priceNum,
+    isAvailable,
   });
 
   if (!updated) {
@@ -109,14 +115,16 @@ router.delete('/admin/menu/:id', requireAdminApi, (req, res) => {
 
 // GET /api/menu – full menu config for builder + preset pizzas
 router.get('/menu', (req, res) => {
+  const availableConfig = getAvailableMenuConfig();
+
   res.json({
-    sizes: menuConfig.SIZES,
-    bases: menuConfig.BASES,
-    sauces: menuConfig.SAUCES,
-    cheeses: menuConfig.CHEESES,
-    toppings: menuConfig.TOPPINGS,
+    sizes: availableConfig.sizes,
+    bases: availableConfig.bases,
+    sauces: availableConfig.sauces,
+    cheeses: availableConfig.cheeses,
+    toppings: availableConfig.toppings,
     rules: menuConfig.BUILDER_RULES,
-    presetPizzas: getMenuItems(),
+    presetPizzas: getAvailableMenuItems(),
   });
 });
 

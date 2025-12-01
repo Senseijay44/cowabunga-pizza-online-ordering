@@ -1,7 +1,10 @@
 // utils/menuStore.js
 const presetPizzas = require('../config/presetPizzas');
 
-let menuItems = presetPizzas.map((item) => ({ ...item }));
+let menuItems = presetPizzas.map((item) => ({
+  ...item,
+  isAvailable: item.isAvailable !== false,
+}));
 
 const getNextId = () => {
   const maxId = menuItems.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0);
@@ -10,17 +13,23 @@ const getNextId = () => {
 
 const getMenuItems = () => menuItems.map((item) => ({ ...item }));
 
+const getAvailableMenuItems = () =>
+  menuItems
+    .filter((item) => item.isAvailable !== false)
+    .map((item) => ({ ...item }));
+
 const getMenuItemById = (id) => {
   const numericId = Number(id);
   return menuItems.find((item) => item.id === numericId) || null;
 };
 
-const addMenuItem = ({ name, description = '', price }) => {
+const addMenuItem = ({ name, description = '', price, isAvailable = true }) => {
   const newItem = {
     id: getNextId(),
     name,
     description,
     price,
+    isAvailable: Boolean(isAvailable),
   };
 
   menuItems.push(newItem);
@@ -39,6 +48,10 @@ const updateMenuItem = (id, updates = {}) => {
     ...menuItems[index],
     ...updates,
     id: numericId,
+    isAvailable:
+      updates.isAvailable === undefined
+        ? menuItems[index].isAvailable !== false
+        : Boolean(updates.isAvailable),
   };
 
   menuItems[index] = merged;
@@ -59,6 +72,7 @@ const deleteMenuItem = (id) => {
 
 module.exports = {
   getMenuItems,
+  getAvailableMenuItems,
   getMenuItemById,
   addMenuItem,
   updateMenuItem,

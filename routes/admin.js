@@ -6,6 +6,22 @@ const router = express.Router();
 
 const { getAllOrders, STATUS } = require('../utils/orderStore');
 const { requireAdmin } = require('../middleware/auth');
+const {
+  getAllMenuConfig,
+  getCategoryItems,
+  upsertCategoryItem,
+  deleteCategoryItem,
+  VALID_CATEGORIES,
+} = require('../utils/menuConfigStore');
+const {
+  getMenuItems,
+  getMenuItemById,
+  addMenuItem,
+  updateMenuItem,
+  deleteMenuItem,
+} = require('../utils/menuStore');
+
+const parseForm = express.urlencoded({ extended: true });
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
@@ -13,6 +29,25 @@ const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
 if (!ADMIN_PASSWORD_HASH) {
   console.warn('WARNING: ADMIN_PASSWORD_HASH not set. Admin login will be disabled.');
 }
+
+const buildRedirect = (params = {}) => {
+  const search = new URLSearchParams(params).toString();
+  return `/admin/menu${search ? `?${search}` : ''}`;
+};
+
+const renderMenuPage = (req, res, extras = {}) => {
+  const menuConfig = getAllMenuConfig();
+  const presetPizzas = getMenuItems();
+
+  res.render('admin-menu', {
+    title: 'Admin · Menu',
+    message: extras.message || req.query.message || null,
+    error: extras.error || req.query.error || null,
+    presetPizzas,
+    menuConfig,
+    editing: extras.editing || null,
+  });
+};
 
 // GET /admin/login – show login form
 router.get('/login', (req, res) => {
@@ -108,11 +143,112 @@ router.get('/orders', requireAdmin, (req, res) => {
   });
 });
 
+router.post('/menu/preset', requireAdmin, parseForm, (req, res) => {
+  const { id, name, description = '', price, isAvailable } = req.body || {};
+
+  if (!name || !price) {
+    return res.redirect(
+      buildRedirect({ error: 'Name and price are required to save a preset pizza.' }),
+    );
+  }
+
+  const priceNum = Number(price);
+  if (!Number.isFinite(priceNum) || priceNum <= 0) {
+    return res.redirect(buildRedirect({ error: 'Price must be a positive number.' }));
+  }
+
+  if (id) {
+    updateMenuItem(id, {
+      name: name.trim(),
+      description: description.trim(),
+      price: priceNum,
+      isAvailable: isAvailable === 'on',
+    });
+    return res.redirect(buildRedirect({ message: 'Preset pizza updated.' }));
+  }
+
+  addMenuItem({
+    name: name.trim(),
+    description: description.trim(),
+    price: priceNum,
+    isAvailable: isAvailable === 'on',
+  });
+
+  return res.redirect(buildRedirect({ message: 'Preset pizza added.' }));
+});
+
+router.post('/menu/preset/:id/delete', requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const success = deleteMenuItem(id);
+
+  if (!success) {
+    return res.redirect(buildRedirect({ error: 'Preset pizza not found.' }));
+  }
+
+  return res.redirect(buildRedirect({ message: 'Preset pizza deleted.' }));
+});
+
+router.post('/menu/:category', requireAdmin, parseForm, (req, res) => {
+  const { category } = req.params;
+  const normalizedCategory = (category || '').toLowerCase();
+  const { id, name, price, isAvailable } = req.body || {};
+
+  if (!VALID_CATEGORIES.includes(normalizedCategory)) {
+    return res.redirect(buildRedirect({ error: 'Invalid category.' }));
+  }
+
+  try {
+    upsertCategoryItem(normalizedCategory, {
+      id,
+      name: (name || '').trim(),
+      price,
+      isAvailable: isAvailable === 'on',
+    });
+    const label = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1);
+    return res.redirect(buildRedirect({ message: `${label} saved.` }));
+  } catch (err) {
+    return res.redirect(buildRedirect({ error: err.message || 'Unable to save item.' }));
+  }
+});
+
+router.post('/menu/:category/:id/delete', requireAdmin, (req, res) => {
+  const { category, id } = req.params;
+  const normalizedCategory = (category || '').toLowerCase();
+
+  if (!VALID_CATEGORIES.includes(normalizedCategory)) {
+    return res.redirect(buildRedirect({ error: 'Invalid category.' }));
+  }
+
+  const success = deleteCategoryItem(normalizedCategory, id);
+  if (!success) {
+    return res.redirect(buildRedirect({ error: 'Item not found.' }));
+  }
+
+  const label = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1);
+  return res.redirect(buildRedirect({ message: `${label} deleted.` }));
+});
+
 // GET /admin/menu – manage preset menu items
 router.get('/menu', requireAdmin, (req, res) => {
-  res.render('admin-menu', {
-    title: 'Admin · Menu',
-  });
+  const { editSection, editId } = req.query || {};
+
+  if (editSection === 'preset' && editId) {
+    const item = getMenuItemById(editId);
+    if (item) {
+      return renderMenuPage(req, res, { editing: { section: 'preset', item } });
+    }
+  }
+
+  if (VALID_CATEGORIES.includes(editSection) && editId) {
+    const item = (getCategoryItems(editSection) || []).find(
+      (entry) => String(entry.id) === String(editId),
+    );
+    if (item) {
+      return renderMenuPage(req, res, { editing: { section: editSection, item } });
+    }
+  }
+
+  return renderMenuPage(req, res);
 });
 
 module.exports = router;
