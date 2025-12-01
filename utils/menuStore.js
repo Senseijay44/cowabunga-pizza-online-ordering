@@ -1,8 +1,12 @@
 // utils/menuStore.js
 const presetPizzas = require('../config/presetPizzas');
 
+const MENU_ITEM_CATEGORIES = ['pizza', 'side', 'drink', 'dessert'];
+
 let menuItems = presetPizzas.map((item) => ({
   ...item,
+  category: MENU_ITEM_CATEGORIES.includes(item.category) ? item.category : 'pizza',
+  imageUrl: item.imageUrl || '',
   isAvailable: item.isAvailable !== false,
 }));
 
@@ -23,12 +27,24 @@ const getMenuItemById = (id) => {
   return menuItems.find((item) => item.id === numericId) || null;
 };
 
-const addMenuItem = ({ name, description = '', price, isAvailable = true }) => {
+const normalizeCategory = (category) =>
+  MENU_ITEM_CATEGORIES.includes(category) ? category : 'pizza';
+
+const addMenuItem = ({
+  name,
+  description = '',
+  price,
+  isAvailable = true,
+  category = 'pizza',
+  imageUrl = '',
+}) => {
   const newItem = {
     id: getNextId(),
     name,
     description,
     price,
+    category: normalizeCategory(category),
+    imageUrl,
     isAvailable: Boolean(isAvailable),
   };
 
@@ -48,6 +64,10 @@ const updateMenuItem = (id, updates = {}) => {
     ...menuItems[index],
     ...updates,
     id: numericId,
+    category: updates.category
+      ? normalizeCategory(updates.category)
+      : menuItems[index].category || 'pizza',
+    imageUrl: updates.imageUrl !== undefined ? updates.imageUrl : menuItems[index].imageUrl,
     isAvailable:
       updates.isAvailable === undefined
         ? menuItems[index].isAvailable !== false
@@ -71,6 +91,7 @@ const deleteMenuItem = (id) => {
 };
 
 module.exports = {
+  MENU_ITEM_CATEGORIES,
   getMenuItems,
   getAvailableMenuItems,
   getMenuItemById,

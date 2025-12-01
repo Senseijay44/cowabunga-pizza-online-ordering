@@ -19,6 +19,7 @@ const {
   addMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  MENU_ITEM_CATEGORIES,
 } = require('../utils/menuStore');
 
 const parseForm = express.urlencoded({ extended: true });
@@ -46,6 +47,7 @@ const renderMenuPage = (req, res, extras = {}) => {
     presetPizzas,
     menuConfig,
     editing: extras.editing || null,
+    menuCategories: MENU_ITEM_CATEGORIES,
   });
 };
 
@@ -144,7 +146,7 @@ router.get('/orders', requireAdmin, (req, res) => {
 });
 
 router.post('/menu/preset', requireAdmin, parseForm, (req, res) => {
-  const { id, name, description = '', price, isAvailable } = req.body || {};
+  const { id, name, description = '', price, isAvailable, imageUrl = '', category } = req.body || {};
 
   if (!name || !price) {
     return res.redirect(
@@ -157,11 +159,18 @@ router.post('/menu/preset', requireAdmin, parseForm, (req, res) => {
     return res.redirect(buildRedirect({ error: 'Price must be a positive number.' }));
   }
 
+  const normalizedCategory = MENU_ITEM_CATEGORIES.includes(category) ? category : null;
+  if (!normalizedCategory) {
+    return res.redirect(buildRedirect({ error: 'Please choose a valid category.' }));
+  }
+
   if (id) {
     updateMenuItem(id, {
       name: name.trim(),
       description: description.trim(),
       price: priceNum,
+      category: normalizedCategory,
+      imageUrl: imageUrl.trim(),
       isAvailable: isAvailable === 'on',
     });
     return res.redirect(buildRedirect({ message: 'Preset pizza updated.' }));
@@ -171,6 +180,8 @@ router.post('/menu/preset', requireAdmin, parseForm, (req, res) => {
     name: name.trim(),
     description: description.trim(),
     price: priceNum,
+    category: normalizedCategory,
+    imageUrl: imageUrl.trim(),
     isAvailable: isAvailable === 'on',
   });
 
