@@ -135,73 +135,19 @@
       <!-- Size -->
       <div class="cb-field-group">
         <label class="cb-field-label">Size</label>
-        <div class="cb-pill-group">
-          <button
-            class="cb-pill cb-pill--active js-size-option"
-            type="button"
-            data-size="Small"
-            data-price="9.99"
-          >
-            Small
-          </button>
-          <button
-            class="cb-pill js-size-option"
-            type="button"
-            data-size="Medium"
-            data-price="11.99"
-          >
-            Medium
-          </button>
-          <button
-            class="cb-pill js-size-option"
-            type="button"
-            data-size="Large"
-            data-price="13.99"
-          >
-            Large
-          </button>
-        </div>
+        <div class="cb-pill-group js-size-options"></div>
       </div>
 
       <!-- Crust -->
       <div class="cb-field-group">
         <label class="cb-field-label">Crust</label>
-        <select class="cb-select js-crust-select">
-          <option data-extra="0">Hand Tossed</option>
-          <option data-extra="0.75">Thin Crust (+$0.75)</option>
-          <option data-extra="2.00">Stuffed Crust (+$2.00)</option>
-        </select>
+        <select class="cb-select js-crust-select"></select>
       </div>
 
       <!-- Toppings -->
       <div class="cb-field-group">
         <label class="cb-field-label">Toppings</label>
-        <div class="cb-topping-grid">
-          <label class="cb-checkbox">
-            <input type="checkbox" class="js-topping" data-price="1.25" />
-            <span>Pepperoni (+$1.25)</span>
-          </label>
-          <label class="cb-checkbox">
-            <input type="checkbox" class="js-topping" data-price="1.25" />
-            <span>Sausage (+$1.25)</span>
-          </label>
-          <label class="cb-checkbox">
-            <input type="checkbox" class="js-topping" data-price="1.00" />
-            <span>Mushrooms (+$1.00)</span>
-          </label>
-          <label class="cb-checkbox">
-            <input type="checkbox" class="js-topping" data-price="0.75" />
-            <span>Onions (+$0.75)</span>
-          </label>
-          <label class="cb-checkbox">
-            <input type="checkbox" class="js-topping" data-price="1.00" />
-            <span>Olives (+$1.00)</span>
-          </label>
-          <label class="cb-checkbox">
-            <input type="checkbox" class="js-topping" data-price="1.00" />
-            <span>Bell Peppers (+$1.00)</span>
-          </label>
-        </div>
+        <div class="cb-topping-grid js-topping-grid"></div>
       </div>
     </div>
 
