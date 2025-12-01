@@ -23,11 +23,9 @@ router.get('/menu', (req, res) => {
   });
 });
 
-// Cart page (still simple placeholder for now)
+// Legacy cart route now redirects to the menu cart panel
 router.get('/cart', (req, res) => {
-  res.render('cart', {
-    title: 'Your Cart'
-  });
+  res.redirect('/menu#cart-panel');
 });
 
 // GET /checkout – show checkout form
@@ -40,7 +38,7 @@ router.get('/checkout', (req, res) => {
 // POST /checkout – handle form submit and redirect to confirmation
 router.post('/checkout', (req, res) => {
   try {
-    let { name, phone, address, cartJson } = req.body;
+    let { name, phone, address, cartJson, fulfillmentMethod } = req.body;
 
     // Normalize/trim
     name = (name || '').trim();
@@ -83,6 +81,7 @@ router.post('/checkout', (req, res) => {
       customer: { name, phone, address },
       items,
       totals: { subtotal, tax, total },
+      fulfillmentMethod: fulfillmentMethod === 'delivery' ? 'delivery' : 'pickup',
     });
 
     // Optional: clear cart from session after successful order

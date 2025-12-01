@@ -166,6 +166,7 @@ router.post('/price', express.json(), (req, res) => {
 router.post('/checkout', express.json(), (req, res) => {
   try {
     const { customer, cart } = req.body || {};
+    const fulfillmentMethod = req.body?.fulfillmentMethod === 'delivery' ? 'delivery' : 'pickup';
 
     if (!customer || !customer.name || !customer.phone || !customer.address) {
       return res.status(400).json({ error: 'Missing customer information' });
@@ -188,6 +189,7 @@ router.post('/checkout', express.json(), (req, res) => {
       },
       items,
       totals: { subtotal, tax, total },
+      fulfillmentMethod,
     });
 
     return res.status(201).json({
