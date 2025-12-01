@@ -5,119 +5,34 @@ const router = express.Router();
 const menuConfig = require('../config/menuConfig.js');
 const { calculatePizzaPrice } = require('../utils/pizzaPricing.js');
 const {
+  DEFAULT_TAX_RATE,
+  buildCustomPizzaMeta,
+  computeTotals,
+  normalizeCartItems,
+} = require('../utils/cartHelpers');
+const {
   createOrder,
   getOrderById,
   updateOrderStatus,
   STATUS,
 } = require('../utils/orderStore');
+const presetPizzas = require('../config/presetPizzas');
 
 const { requireAdminApi } = require('../middleware/auth');
 
 const ALLOWED_STATUSES = Object.values(STATUS);
 
-// Same dummy data for now – preset pizzas
-const menuItems = [
-  {
-    id: 1,
-    name: 'Cowabunga Classic',
-    description: 'Pepperoni, mozzarella, red sauce.',
-    price: 14.99,
-  },
-  {
-    id: 2,
-    name: 'Turtle Supreme',
-    description: 'Sausage, pepperoni, peppers, onions, olives.',
-    price: 17.99,
-  },
-  {
-    id: 3,
-    name: 'Veggie Dojo',
-    description: 'Mushrooms, peppers, onions, olives, spinach.',
-    price: 15.99,
-  },
-];
-
 // ------------------------------------------------------
 // Helpers
 // ------------------------------------------------------
 
-// Normalize cart items and apply basic sanity checks
-function normalizeCartItems(cart) {
-  if (!Array.isArray(cart)) return [];
-
-  return cart
-    .map((item) => {
-      const price = Number(item.price);
-      const qty = Number(item.qty || 1);
-
-      if (!Number.isFinite(price) || price <= 0) {
-        return null;
-      }
-
-      if (!Number.isFinite(qty) || qty <= 0) {
-        return null;
-      }
-
-      return {
-        name: String(item.name || 'Custom Pizza'),
-        meta: String(item.meta || ''),
-        price,
-        qty,
-      };
-    })
-    .filter(Boolean);
-}
-
-function getCartFromSession(req) {
-  if (!req.session.cart) {
+const getCartFromSession = (req) => {
+  if (!Array.isArray(req.session.cart)) {
     req.session.cart = [];
   }
+
   return req.session.cart;
-}
-
-function computeTotals(cart) {
-  const subtotal = cart.reduce(
-    (sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1),
-    0
-  );
-  const total = subtotal * 1.086; // approx 8.6% tax
-  return { subtotal, total };
-}
-
-// Helper: find menu config item by id (or idAlt)
-function findById(list, id) {
-  if (!Array.isArray(list) || !id) return null;
-  return list.find((item) => item.id === id || item.idAlt === id) || null;
-}
-
-// Helper: build a human-readable meta string for custom pizzas
-function buildCustomPizzaMeta({ sizeId, baseId, sauceId, cheeseId, toppingIds }) {
-  const { SIZES, BASES, SAUCES, CHEESES, TOPPINGS } = menuConfig;
-
-  const parts = [];
-
-  const size = findById(SIZES, sizeId);
-  const base = findById(BASES, baseId);
-  const sauce = findById(SAUCES, sauceId);
-  const cheese = findById(CHEESES, cheeseId);
-
-  if (size) parts.push(size.name);
-  if (base) parts.push(base.name);
-  if (sauce) parts.push(sauce.name);
-  if (cheese) parts.push(cheese.name);
-
-  const toppingObjs = (Array.isArray(toppingIds) ? toppingIds : [toppingIds])
-    .filter(Boolean)
-    .map((id) => findById(TOPPINGS, id))
-    .filter(Boolean);
-
-  if (toppingObjs.length > 0) {
-    const toppingNames = toppingObjs.map((t) => t.name).join(', ');
-    parts.push(`Toppings: ${toppingNames}`);
-  }
-
-  return parts.join(' | ');
-}
+};
 
 // ------------------------------------------------------
 // Menu + Pricing
@@ -132,7 +47,7 @@ router.get('/menu', (req, res) => {
     cheeses: menuConfig.CHEESES,
     toppings: menuConfig.TOPPINGS,
     rules: menuConfig.BUILDER_RULES,
-    presetPizzas: menuItems,
+    presetPizzas,
   });
 });
 
@@ -173,13 +88,7 @@ router.post('/checkout', express.json(), (req, res) => {
     }
 
     // Recompute totals on the server
-    const subtotal = items.reduce(
-      (sum, item) => sum + item.price * item.qty,
-      0
-    );
-    const taxRate = 0.086;
-    const tax = subtotal * taxRate;
-    const total = subtotal + tax;
+    const { subtotal, tax, total } = computeTotals(items, DEFAULT_TAX_RATE);
 
     const order = createOrder({
       customer: {

@@ -8,22 +8,14 @@ const {
   TOPPINGS,
   BUILDER_RULES,
 } = require('../config/menuConfig.js');
+const {
+  findMenuItemById,
+  findMenuItemOrDefault,
+} = require('./menuHelpers');
 
 // --- Helpers --------------------------------------------------
 
-function findById(list, id) {
-  if (!id) return null;
-  return list.find((item) => item.id === id || item.idAlt === id) || null;
-}
-
-function findOrDefault(list, id, defaultId) {
-  const resolvedId = id || defaultId;
-  return findById(list, resolvedId);
-}
-
-function roundToCents(value) {
-  return Math.round(value * 100) / 100;
-}
+const roundToCents = (value) => Math.round(value * 100) / 100;
 
 // --- Core price calculation -----------------------------------
 
@@ -37,10 +29,14 @@ function calculatePizzaPrice(pizzaState = {}) {
     quantity = 1,
   } = pizzaState;
 
-  const size = findOrDefault(SIZES, sizeId, BUILDER_RULES.defaultSizeId);
-  const base = findOrDefault(BASES, baseId, BUILDER_RULES.defaultBaseId);
-  const sauce = findOrDefault(SAUCES, sauceId, BUILDER_RULES.defaultSauceId);
-  const cheese = findOrDefault(
+  const size = findMenuItemOrDefault(SIZES, sizeId, BUILDER_RULES.defaultSizeId);
+  const base = findMenuItemOrDefault(BASES, baseId, BUILDER_RULES.defaultBaseId);
+  const sauce = findMenuItemOrDefault(
+    SAUCES,
+    sauceId,
+    BUILDER_RULES.defaultSauceId
+  );
+  const cheese = findMenuItemOrDefault(
     CHEESES,
     cheeseId,
     BUILDER_RULES.defaultCheeseId
@@ -61,7 +57,7 @@ function calculatePizzaPrice(pizzaState = {}) {
   const limitedToppings = toppings.slice(0, maxToppings);
 
   const toppingDetails = limitedToppings
-    .map((toppingId) => findById(TOPPINGS, toppingId))
+    .map((toppingId) => findMenuItemById(TOPPINGS, toppingId))
     .filter(Boolean);
 
   const toppingsPrice = toppingDetails.reduce(
