@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cartBar = document.getElementById('cb-cart-bar');
   const cartBarLabelEl = document.getElementById('cb-cart-bar-label');
   const cartBarTotalEl = document.getElementById('cb-cart-bar-total');
+  const cartBackdrop = document.getElementById('cb-cart-backdrop');
 
   const sizeButtons = modal ? modal.querySelectorAll('.js-size-option') : [];
   const crustSelect = modal ? modal.querySelector('.js-crust-select') : null;
@@ -70,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!cartPanel) {
     return;
   }
+
+  setCartDrawerOpen(false);
 
   // -------------------------------------------------------------
   // CART STATE
@@ -92,6 +95,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return { itemCount, subtotal, total };
   }
 
+  function isCartDrawerOpen() {
+    return cartPanel && cartPanel.classList.contains('cb-cart--open');
+  }
+
+  function setCartDrawerOpen(isOpen) {
+    if (!cartPanel) return;
+    cartPanel.classList.toggle('cb-cart--open', isOpen);
+    if (cartBar) cartBar.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (cartBackdrop) {
+      cartBackdrop.classList.toggle('cb-cart-backdrop--visible', isOpen);
+      cartBackdrop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+  }
+
   function updateCartSummaryUI() {
     const { itemCount, subtotal, total } = computeCartTotals();
 
@@ -106,7 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
         itemCount === 0 ? 'Cart: 0 items' : `Cart: ${itemCount} item${itemCount === 1 ? '' : 's'}`;
     }
     if (cartBarTotalEl) {
-      cartBarTotalEl.textContent = money(total) + ' ▴';
+      const chevron = isCartDrawerOpen() ? ' ▾' : ' ▴';
+      cartBarTotalEl.textContent = money(total) + chevron;
     }
   }
 
@@ -394,9 +412,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mobile cart bar scroll
   if (cartBar && cartPanel) {
-    cartBar.addEventListener('click', () =>
-      cartPanel.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    );
+    const toggleCartDrawer = () => {
+      const isOpen = !isCartDrawerOpen();
+      setCartDrawerOpen(isOpen);
+      updateCartSummaryUI();
+    };
+
+    cartBar.addEventListener('click', toggleCartDrawer);
+
+    if (cartBackdrop) {
+      cartBackdrop.addEventListener('click', () => {
+        setCartDrawerOpen(false);
+        updateCartSummaryUI();
+      });
+    }
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && isCartDrawerOpen()) {
+        setCartDrawerOpen(false);
+        updateCartSummaryUI();
+      }
+    });
   }
 
   // Initial cart load
