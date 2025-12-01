@@ -1,6 +1,48 @@
 console.log('Cowabunga Pizza client script loaded with cart + builder.');
 
-// Behavior for the enhanced menu page and dynamic pizza builder
+// -------------------------------------------------------------
+//  TOAST SYSTEM  (inline, self-contained)
+// -------------------------------------------------------------
+function showToast(message, type = 'success') {
+  console.log('showToast (main.js):', message, type);
+
+  const toast = document.createElement('div');
+  Object.assign(toast.style, {
+    position: 'fixed',
+    bottom: '24px',
+    right: '24px',
+    background: type === 'error' ? '#b91c1c' : '#16a34a',
+    color: '#f9fafb',
+    padding: '0.6rem 1rem',
+    borderRadius: '999px',
+    zIndex: 9999,
+    fontSize: '0.85rem',
+    opacity: 0,
+    transform: 'translateY(16px)',
+    transition: 'opacity 0.25s ease, transform 0.25s ease',
+    border: '1px solid rgba(15,23,42,0.7)',
+    boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+  });
+
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.style.opacity = 1;
+    toast.style.transform = 'translateY(0)';
+  });
+
+  setTimeout(() => {
+    toast.style.opacity = 0;
+    toast.style.transform = 'translateY(16px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
+// -------------------------------------------------------------
+// MAIN MENU + CART + MODAL BUILDER LOGIC
+// -------------------------------------------------------------
+
 document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('cb-builder-modal');
   const openButtons = document.querySelectorAll('.js-open-builder');
@@ -24,14 +66,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const addMenuButtons = document.querySelectorAll('.js-add-menu-item');
 
-  // If we're not on the menu page, just exit quietly
+  // If we're not on the menu page, bail quietly
   if (!cartPanel) {
     return;
   }
 
-  // ---- CART STATE ----
-  const TAX_RATE = 0.086; // 8.6% approx
-  const cart = []; // local mirror of server cart
+  // -------------------------------------------------------------
+  // CART STATE
+  // -------------------------------------------------------------
+  const TAX_RATE = 0.086;
+  const cart = [];
 
   function money(n) {
     return `$${n.toFixed(2)}`;
@@ -54,16 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cartCountEl) {
       cartCountEl.textContent = itemCount === 1 ? '1 item' : `${itemCount} items`;
     }
-    if (cartSubtotalEl) {
-      cartSubtotalEl.textContent = money(subtotal);
-    }
-    if (cartTotalEl) {
-      cartTotalEl.textContent = money(total);
-    }
+    if (cartSubtotalEl) cartSubtotalEl.textContent = money(subtotal);
+    if (cartTotalEl) cartTotalEl.textContent = money(total);
+
     if (cartBarLabelEl) {
-      cartBarLabelEl.textContent = itemCount === 0
-        ? 'Cart: 0 items'
-        : `Cart: ${itemCount} item${itemCount === 1 ? '' : 's'}`;
+      cartBarLabelEl.textContent =
+        itemCount === 0 ? 'Cart: 0 items' : `Cart: ${itemCount} item${itemCount === 1 ? '' : 's'}`;
     }
     if (cartBarTotalEl) {
       cartBarTotalEl.textContent = money(total) + ' ▴';
@@ -78,7 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cart.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'cb-cart-item';
-      empty.innerHTML = '<div><p class="cb-cart-item-name">Your cart is empty</p><p class="cb-cart-item-meta">Add a pizza to get started.</p></div>';
+      empty.innerHTML =
+        '<div><p class="cb-cart-item-name">Your cart is empty</p><p class="cb-cart-item-meta">Add a pizza to get started.</p></div>';
       cartItemsEl.appendChild(empty);
       updateCartSummaryUI();
       return;
@@ -95,67 +136,37 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="cb-cart-item-right">
           <span class="cb-cart-item-price">${money(item.price * item.qty)}</span>
           <div class="cb-qty-control">
-            <button
-              type="button"
-              class="js-cart-remove"
-              data-id="${item.id}"
-              aria-label="Remove item"
-            >✕</button>
-            <button
-              type="button"
-              class="js-cart-minus"
-              data-index="${index}"
-              data-id="${item.id}"
-            >-</button>
+            <button class="js-cart-remove" data-id="${item.id}" aria-label="Remove item">✕</button>
+            <button class="js-cart-minus" data-id="${item.id}" data-index="${index}">-</button>
             <span>${item.qty}</span>
-            <button
-              type="button"
-              class="js-cart-plus"
-              data-index="${index}"
-              data-id="${item.id}"
-            >+</button>
+            <button class="js-cart-plus" data-id="${item.id}" data-index="${index}">+</button>
           </div>
         </div>
       `;
       cartItemsEl.appendChild(li);
     });
 
-    // Attach handlers for the quantity buttons – backend PATCH
     cartItemsEl.querySelectorAll('.js-cart-minus').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        if (!id) return;
-        updateCartItem(id, -1);
-      });
+      btn.addEventListener('click', () => updateCartItem(btn.dataset.id, -1));
     });
 
     cartItemsEl.querySelectorAll('.js-cart-plus').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        if (!id) return;
-        updateCartItem(id, +1);
-      });
+      btn.addEventListener('click', () => updateCartItem(btn.dataset.id, +1));
     });
 
-    // Attach handler for remove button – backend DELETE
     cartItemsEl.querySelectorAll('.js-cart-remove').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        if (!id) return;
-        deleteCartItem(id);
-      });
+      btn.addEventListener('click', () => deleteCartItem(btn.dataset.id));
     });
 
     updateCartSummaryUI();
   }
 
-  // Load cart from server on page load
   async function loadCartFromServer() {
     try {
       const res = await fetch('/api/cart');
       if (!res.ok) {
-        console.error('Failed to load cart from server:', res.status);
-        renderCart(); // render empty/local
+        console.error('Failed to load cart:', res.status);
+        renderCart();
         return;
       }
       const data = await res.json();
@@ -163,12 +174,14 @@ document.addEventListener('DOMContentLoaded', () => {
       (data.items || []).forEach(item => cart.push(item));
       renderCart();
     } catch (err) {
-      console.error('Error loading cart from server:', err);
+      console.error('Error loading cart:', err);
       renderCart();
     }
   }
 
-  // Add new item using backend API
+  // -------------------------------------------------------------
+  // ADD ITEM (Preset or Modal) — WITH TOASTS
+  // -------------------------------------------------------------
   async function addItemToCart(newItem) {
     try {
       const res = await fetch('/api/cart/items', {
@@ -178,22 +191,26 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!res.ok) {
-        console.error('Failed to add item to cart:', res.status);
+        console.error('Failed to add item:', res.status);
+        showToast('Error adding item to cart', 'error');
         return;
       }
 
       const data = await res.json();
-
       cart.length = 0;
       (data.cart || []).forEach(item => cart.push(item));
 
       renderCart();
+      showToast('Added to cart!', 'success');
     } catch (err) {
-      console.error('Error adding item to cart:', err);
+      console.error('Error adding item:', err);
+      showToast('Error adding to cart', 'error');
     }
   }
 
-  // Update existing item (for +/- qty) using PATCH
+  // -------------------------------------------------------------
+  // PATCH (qty change)
+  // -------------------------------------------------------------
   async function updateCartItem(id, delta) {
     try {
       const res = await fetch(`/api/cart/items/${encodeURIComponent(id)}`, {
@@ -203,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!res.ok) {
-        console.error('Failed to update cart item:', res.status);
+        console.error('Failed updating cart:', res.status);
         return;
       }
 
@@ -212,11 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
       (data.cart || []).forEach(item => cart.push(item));
       renderCart();
     } catch (err) {
-      console.error('Error updating cart item:', err);
+      console.error('Error updating cart:', err);
     }
   }
 
-  // Remove item entirely using DELETE
+  // -------------------------------------------------------------
+  // DELETE
+  // -------------------------------------------------------------
   async function deleteCartItem(id) {
     try {
       const res = await fetch(`/api/cart/items/${encodeURIComponent(id)}`, {
@@ -224,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!res.ok) {
-        console.error('Failed to delete cart item:', res.status);
+        console.error('Failed delete:', res.status);
         return;
       }
 
@@ -233,11 +252,13 @@ document.addEventListener('DOMContentLoaded', () => {
       (data.cart || []).forEach(item => cart.push(item));
       renderCart();
     } catch (err) {
-      console.error('Error deleting cart item:', err);
+      console.error('Error removing item:', err);
     }
   }
 
-  // ---- BUILDER STATE ----
+  // -------------------------------------------------------------
+  // MODAL BUILDER LOGIC
+  // -------------------------------------------------------------
   const builderState = {
     sizeLabel: 'Small',
     sizePrice: 9.99,
@@ -253,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function recalcBuilderTotal() {
-    if (!builderTotalEl) return;
+    if (!builderTotalEl) return 0;
     const total = builderState.sizePrice + builderState.crustExtra + builderState.toppingsTotal;
     builderTotalEl.textContent = money(total);
     return total;
@@ -262,18 +283,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function recomputeBuilderToppings() {
     builderState.toppings = [];
     let sum = 0;
+
     toppingCheckboxes.forEach(cb => {
       if (cb.checked) {
         const label = cb.closest('label');
-        if (label) {
-          const span = label.querySelector('span');
-          if (span) {
-            builderState.toppings.push(span.textContent.replace(/\s*\(.*\)$/, ''));
-          }
-        }
+        const span = label ? label.querySelector('span') : null;
+        if (span) builderState.toppings.push(span.textContent.replace(/\s*\(.*\)$/, ''));
         sum += parsePrice(cb.dataset.price, 0);
       }
     });
+
     builderState.toppingsTotal = sum;
     recalcBuilderTotal();
   }
@@ -281,15 +300,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function initBuilderDefaults() {
     if (!modal) return;
 
-    toppingCheckboxes.forEach(cb => {
-      cb.checked = false;
-    });
+    toppingCheckboxes.forEach(cb => (cb.checked = false));
 
     if (sizeButtons.length > 0) {
-      sizeButtons.forEach(btn => btn.classList.remove('cb-pill--active'));
+      sizeButtons.forEach(b => b.classList.remove('cb-pill--active'));
       const first = sizeButtons[0];
       first.classList.add('cb-pill--active');
-      builderState.sizeLabel = first.dataset.size || 'Small';
+      builderState.sizeLabel = first.dataset.size;
       builderState.sizePrice = parsePrice(first.dataset.price, 9.99);
     }
 
@@ -320,23 +337,15 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.setAttribute('aria-hidden', 'true');
   }
 
-  openButtons.forEach(btn => {
-    btn.addEventListener('click', openModal);
-  });
-
-  closeButtons.forEach(btn => {
-    btn.addEventListener('click', closeModal);
-  });
-
-  if (backdrop) {
-    backdrop.addEventListener('click', closeModal);
-  }
+  openButtons.forEach(btn => btn.addEventListener('click', openModal));
+  closeButtons.forEach(btn => btn.addEventListener('click', closeModal));
+  if (backdrop) backdrop.addEventListener('click', closeModal);
 
   sizeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       sizeButtons.forEach(b => b.classList.remove('cb-pill--active'));
       btn.classList.add('cb-pill--active');
-      builderState.sizeLabel = btn.dataset.size || 'Custom';
+      builderState.sizeLabel = btn.dataset.size;
       builderState.sizePrice = parsePrice(btn.dataset.price, 0);
       recalcBuilderTotal();
     });
@@ -345,57 +354,51 @@ document.addEventListener('DOMContentLoaded', () => {
   if (crustSelect) {
     crustSelect.addEventListener('change', () => {
       const opt = crustSelect.selectedOptions[0];
-      if (opt) {
-        builderState.crustLabel = opt.textContent.trim();
-        builderState.crustExtra = parsePrice(opt.dataset.extra, 0);
-      } else {
-        builderState.crustLabel = 'Hand Tossed';
-        builderState.crustExtra = 0;
-      }
+      builderState.crustLabel = opt.textContent.trim();
+      builderState.crustExtra = parsePrice(opt.dataset.extra, 0);
       recalcBuilderTotal();
     });
   }
 
-  toppingCheckboxes.forEach(cb => {
-    cb.addEventListener('change', recomputeBuilderToppings);
-  });
+  toppingCheckboxes.forEach(cb => cb.addEventListener('change', recomputeBuilderToppings));
 
   if (builderAddBtn) {
     builderAddBtn.addEventListener('click', () => {
       const total = recalcBuilderTotal() || 0;
       const name = `Custom Pizza (${builderState.sizeLabel})`;
       let meta = builderState.crustLabel;
+
       if (builderState.toppings.length > 0) {
         meta += ' • ' + builderState.toppings.join(', ');
       }
+
       addItemToCart({
         name,
         meta,
         price: total,
         qty: 1
       });
+
       closeModal();
     });
   }
 
+  // Preset menu items
   addMenuButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const name = btn.dataset.name || 'Menu Pizza';
       const price = parsePrice(btn.dataset.price, 0);
-      addItemToCart({
-        name,
-        price,
-        qty: 1
-      });
+      addItemToCart({ name, price, qty: 1 });
     });
   });
 
+  // Mobile cart bar scroll
   if (cartBar && cartPanel) {
-    cartBar.addEventListener('click', () => {
-      cartPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    cartBar.addEventListener('click', () =>
+      cartPanel.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    );
   }
 
-  // INITIAL LOAD: sync cart from backend session
+  // Initial cart load
   loadCartFromServer();
 });

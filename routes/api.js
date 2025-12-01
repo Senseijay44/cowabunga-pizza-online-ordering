@@ -84,6 +84,41 @@ function computeTotals(cart) {
   return { subtotal, total };
 }
 
+// Helper: find menu config item by id (or idAlt)
+function findById(list, id) {
+  if (!Array.isArray(list) || !id) return null;
+  return list.find((item) => item.id === id || item.idAlt === id) || null;
+}
+
+// Helper: build a human-readable meta string for custom pizzas
+function buildCustomPizzaMeta({ sizeId, baseId, sauceId, cheeseId, toppingIds }) {
+  const { SIZES, BASES, SAUCES, CHEESES, TOPPINGS } = menuConfig;
+
+  const parts = [];
+
+  const size = findById(SIZES, sizeId);
+  const base = findById(BASES, baseId);
+  const sauce = findById(SAUCES, sauceId);
+  const cheese = findById(CHEESES, cheeseId);
+
+  if (size) parts.push(size.name);
+  if (base) parts.push(base.name);
+  if (sauce) parts.push(sauce.name);
+  if (cheese) parts.push(cheese.name);
+
+  const toppingObjs = (Array.isArray(toppingIds) ? toppingIds : [toppingIds])
+    .filter(Boolean)
+    .map((id) => findById(TOPPINGS, id))
+    .filter(Boolean);
+
+  if (toppingObjs.length > 0) {
+    const toppingNames = toppingObjs.map((t) => t.name).join(', ');
+    parts.push(`Toppings: ${toppingNames}`);
+  }
+
+  return parts.join(' | ');
+}
+
 // ------------------------------------------------------
 // Menu + Pricing
 // ------------------------------------------------------
@@ -257,7 +292,98 @@ router.post('/payment', (req, res) => {
 // ------------------------------------------------------
 
 // POST /api/cart/items – add item to cart
-router.post('/cart/items', (req, res) => {
+router.post('/cart/items', express.json(), (req, res) => {
+  const { type } = req.body || {};
+
+  // Branch 1: Custom pizza from builder
+  if (type === 'custom') {
+    try {
+      const {
+        sizeId,
+        baseId,
+        sauceId,
+        cheeseId,
+        toppingIds,
+        quantity,
+      } = req.body;
+
+      const qtyNum = Number(quantity || 1);
+      if (!Number.isFinite(qtyNum) || qtyNum <= 0) {
+        return res.status(400).json({ error: 'Invalid quantity value' });
+      }
+
+      // Use the same pricing logic as /api/price
+      const pricing = calculatePizzaPrice({
+        sizeId,
+        baseId,
+        sauceId,
+        cheeseId,
+        toppings: toppingIds,
+        quantity: qtyNum,
+      });
+
+      // Defensive check in case calculatePizzaPrice misbehaves
+      if (
+        !pricing ||
+        typeof pricing.total !== 'number' ||
+        typeof pricing.quantity !== 'number' ||
+        pricing.total <= 0 ||
+        pricing.quantity <= 0
+      ) {
+        return res
+          .status(400)
+          .json({ error: 'Invalid pricing result for custom pizza' });
+      }
+
+      const unitPrice = pricing.total / pricing.quantity;
+
+      const cart = getCartFromSession(req);
+
+      const meta = buildCustomPizzaMeta({
+        sizeId,
+        baseId,
+        sauceId,
+        cheeseId,
+        toppingIds,
+      });
+
+      const newItem = {
+        id: Date.now().toString(), // simple unique ID for now
+        name: 'Custom Pizza',
+        meta,
+        price: unitPrice,
+        qty: pricing.quantity,
+      };
+
+      // Attempt to merge with existing identical custom item
+      const existing = cart.find(
+        (item) => item.name === newItem.name && item.meta === newItem.meta
+      );
+
+      if (existing) {
+        existing.qty += newItem.qty;
+      } else {
+        cart.push(newItem);
+      }
+
+      const { subtotal, total } = computeTotals(cart);
+
+      return res.status(201).json({
+        message: 'Custom pizza added to cart',
+        cart,
+        item: newItem,
+        subtotal,
+        total,
+      });
+    } catch (err) {
+      console.error('Custom cart item error:', err);
+      return res
+        .status(500)
+        .json({ error: 'Failed to add custom pizza to cart' });
+    }
+  }
+
+  // Branch 2: Standard item (existing behavior)
   const { name, meta, price, qty } = req.body;
 
   const priceNum = Number(price);

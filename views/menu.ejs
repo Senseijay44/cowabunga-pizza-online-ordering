@@ -4,6 +4,7 @@
 </section>
 
 <div class="cb-main">
+  <!-- ===== LEFT: MENU ===== -->
   <section class="cb-menu-section">
     <!-- Order Mode / Info Bar -->
     <div class="cb-order-bar">
@@ -29,16 +30,24 @@
     <!-- Menu Grid -->
     <div class="cb-menu-grid">
       <% const pizzaImages = ['/images/pizza-1.png', '/images/pizza-2.png', '/images/pizza-3.png']; %>
+
       <% menuItems.forEach((item, idx) => { %>
         <article class="cb-card">
-          <img src="<%= pizzaImages[idx % pizzaImages.length] %>" alt="<%= item.name %>" class="cb-card-img" />
+          <img
+            src="<%= item.imageUrl || pizzaImages[idx % pizzaImages.length] %>"
+            alt="<%= item.name %>"
+            class="cb-card-img"
+          />
           <div class="cb-card-body">
             <h3 class="cb-card-title"><%= item.name %></h3>
             <p class="cb-card-desc"><%= item.description %></p>
             <div class="cb-card-footer">
               <span class="cb-price">$<%= item.price.toFixed(2) %></span>
               <div class="cb-card-actions">
-                <button class="cb-btn cb-btn--outline cb-btn--sm js-open-builder" type="button">
+                <button
+                  class="cb-btn cb-btn--outline cb-btn--sm js-open-builder"
+                  type="button"
+                >
                   Customize
                 </button>
                 <button
@@ -74,7 +83,7 @@
     </div>
   </section>
 
-  <!-- Cart Sidebar / Panel -->
+  <!-- ===== RIGHT: CART SIDEBAR ===== -->
   <aside class="cb-cart" id="cart-panel">
     <header class="cb-cart-header">
       <h2>Your Order</h2>
@@ -82,7 +91,7 @@
     </header>
 
     <ul class="cb-cart-list" id="cb-cart-items">
-      <!-- Cart items will be injected by JavaScript -->
+      <!-- Cart items injected by main.js -->
     </ul>
 
     <div class="cb-cart-summary">
@@ -90,11 +99,15 @@
         <span>Subtotal</span>
         <span id="cb-cart-subtotal">$0.00</span>
       </div>
+      <div class="cb-cart-row">
+        <span>Tax (est.)</span>
+        <span id="cb-cart-tax">$0.00</span>
+      </div>
       <div class="cb-cart-row cb-cart-row--total">
         <span>Total</span>
         <span id="cb-cart-total">$0.00</span>
       </div>
-      <!-- Updated: link to /checkout -->
+
       <a href="/checkout" class="cb-btn cb-btn--primary cb-btn--full">
         Proceed to Checkout
       </a>
@@ -102,13 +115,13 @@
   </aside>
 </div>
 
-<!-- Mobile Cart Summary Bar -->
+<!-- ===== MOBILE CART SUMMARY BAR ===== -->
 <button class="cb-cart-bar" type="button" id="cb-cart-bar">
   <span id="cb-cart-bar-label">Cart: 0 items</span>
   <span id="cb-cart-bar-total">$0.00 ▴</span>
 </button>
 
-<!-- Pizza Builder Modal -->
+<!-- ===== PIZZA BUILDER MODAL (quick builder) ===== -->
 <div class="cb-modal" id="cb-builder-modal" aria-hidden="true">
   <div class="cb-modal-backdrop"></div>
   <div class="cb-modal-dialog" role="dialog" aria-modal="true">
@@ -122,16 +135,28 @@
       <div class="cb-field-group">
         <label class="cb-field-label">Size</label>
         <div class="cb-pill-group">
-          <button class="cb-pill cb-pill--active js-size-option"
-                  type="button" data-size="Small" data-price="9.99">
+          <button
+            class="cb-pill cb-pill--active js-size-option"
+            type="button"
+            data-size="Small"
+            data-price="9.99"
+          >
             Small
           </button>
-          <button class="cb-pill js-size-option"
-                  type="button" data-size="Medium" data-price="11.99">
+          <button
+            class="cb-pill js-size-option"
+            type="button"
+            data-size="Medium"
+            data-price="11.99"
+          >
             Medium
           </button>
-          <button class="cb-pill js-size-option"
-                  type="button" data-size="Large" data-price="13.99">
+          <button
+            class="cb-pill js-size-option"
+            type="button"
+            data-size="Large"
+            data-price="13.99"
+          >
             Large
           </button>
         </div>
@@ -183,8 +208,12 @@
       <div class="cb-modal-total">
         Total: <span class="cb-price" id="cb-builder-total">$0.00</span>
       </div>
-      <button class="cb-btn cb-btn--outline cb-modal-cancel" type="button">Cancel</button>
-      <button class="cb-btn cb-btn--primary js-builder-add" type="button">Add to Cart</button>
+      <button class="cb-btn cb-btn--outline cb-modal-cancel" type="button">
+        Cancel
+      </button>
+      <button class="cb-btn cb-btn--primary js-builder-add" type="button">
+        Add to Cart
+      </button>
     </footer>
   </div>
 </div>
