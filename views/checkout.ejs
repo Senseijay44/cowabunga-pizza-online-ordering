@@ -10,6 +10,19 @@
 
     <form action="/checkout" method="POST" class="form checkout-form">
       <div class="form-row">
+        <label>Order Type</label>
+        <div class="cb-order-bar">
+          <div class="cb-order-mode">
+            <button class="cb-pill cb-pill--active js-checkout-mode" type="button" data-mode="pickup">Pickup</button>
+            <button class="cb-pill js-checkout-mode" type="button" data-mode="delivery">Delivery</button>
+          </div>
+          <div class="cb-order-info">
+            <span>Currently set to: <strong id="checkout-fulfillment-label">Pickup</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
         <label for="name">Name<span class="required">*</span></label>
         <input id="name" name="name" type="text" required />
       </div>
@@ -26,6 +39,7 @@
 
       <!-- Hidden field where we'll drop cart JSON from /api/cart -->
       <input type="hidden" id="cartJson" name="cartJson" value="" />
+      <input type="hidden" name="fulfillmentMethod" id="fulfillment-method-input" value="pickup" />
 
       <button type="submit" class="btn-primary btn-full">
         Place Order
@@ -42,4 +56,31 @@
   </div>
 </section>
 
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const fulfillmentInput = document.getElementById('fulfillment-method-input');
+    const fulfillmentLabel = document.getElementById('checkout-fulfillment-label');
+    const modeButtons = document.querySelectorAll('.js-checkout-mode');
+
+    const normalizeMode = (value) => (value === 'delivery' ? 'delivery' : 'pickup');
+
+    const applyMode = (mode) => {
+      const normalized = normalizeMode(mode);
+      fulfillmentInput.value = normalized;
+      modeButtons.forEach((btn) => {
+        btn.classList.toggle('cb-pill--active', btn.dataset.mode === normalized);
+      });
+      if (fulfillmentLabel) {
+        fulfillmentLabel.textContent = normalized === 'delivery' ? 'Delivery' : 'Pickup';
+      }
+    };
+
+    const storedMode = sessionStorage.getItem('orderMode');
+    applyMode(storedMode);
+
+    modeButtons.forEach((btn) => {
+      btn.addEventListener('click', () => applyMode(btn.dataset.mode));
+    });
+  });
+</script>
 <script src="/js/checkout.js"></script>

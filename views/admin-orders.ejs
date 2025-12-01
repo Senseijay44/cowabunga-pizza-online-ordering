@@ -12,7 +12,7 @@
       <a href="/" class="brand">Cowabunga Pizza</a>
       <ul class="nav-links">
         <li><a href="/menu">Menu</a></li>
-        <li><a href="/cart">Cart</a></li>
+        <li><a href="/menu#cart-panel">Cart</a></li>
         <li><a href="/checkout">Checkout</a></li>
         <li><a href="/admin/orders" class="active">Admin Orders</a></li>
         <li><a href="/admin/menu">Admin Menu</a></li>
@@ -37,6 +37,7 @@
               <th>Placed At</th>
               <th>Customer</th>
               <th>Contact</th>
+              <th>Type</th>
               <th>Status</th>
               <th>Update Status</th>
               <th>Total</th>
@@ -51,10 +52,23 @@
                 </td>
                 <td>
                   <strong><%= order.customer.name %></strong><br>
-                  <small><%= order.customer.address %></small>
+                  <small>
+                    <% if (order.fulfillmentMethod === 'delivery') { %>
+                      <strong>Delivery:</strong> <%= order.customer.address %>
+                    <% } else { %>
+                      <span class="muted">Pickup</span><br>
+                      <%= order.customer.address %>
+                    <% } %>
+                  </small>
                 </td>
                 <td>
                   <span><%= order.customer.phone %></span>
+                </td>
+                <td>
+                  <strong><%= order.fulfillmentMethod === 'delivery' ? 'Delivery' : 'Pickup' %></strong>
+                  <% if (order.fulfillmentMethod === 'delivery') { %>
+                    <div class="order-address-emphasis"><small><%= order.customer.address %></small></div>
+                  <% } %>
                 </td>
                 <td class="order-status-cell">
                   <%= order.status %>

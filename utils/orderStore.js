@@ -17,8 +17,9 @@ const STATUS = {
  * @param {Object} payload.customer - { name, phone, address }
  * @param {Array} payload.items - cart items
  * @param {Object} payload.totals - { subtotal, tax, total }
+ * @param {'pickup'|'delivery'} [payload.fulfillmentMethod]
  */
-function createOrder({ customer, items, totals }) {
+function createOrder({ customer, items, totals, fulfillmentMethod = 'pickup' }) {
   const now = new Date().toISOString();
 
   const order = {
@@ -26,6 +27,7 @@ function createOrder({ customer, items, totals }) {
     customer,
     items: Array.isArray(items) ? items : [],
     totals: totals || { subtotal: 0, tax: 0, total: 0 },
+    fulfillmentMethod: fulfillmentMethod === 'delivery' ? 'delivery' : 'pickup',
     status: STATUS.PENDING,
     createdAt: now,
     updatedAt: now,

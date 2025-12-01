@@ -69,6 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let builderMenuConfig = null;
 
   const addMenuButtons = document.querySelectorAll('.js-add-menu-item');
+  const orderModeButtons = document.querySelectorAll('.js-order-mode');
+
+  const ORDER_MODE_KEY = 'orderMode';
+  const normalizeOrderMode = (value) => (value === 'delivery' ? 'delivery' : 'pickup');
+  let orderMode = normalizeOrderMode(sessionStorage.getItem(ORDER_MODE_KEY));
 
   // If we're not on the menu page, bail quietly
   if (!cartPanel) {
@@ -79,6 +84,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const menuCards = document.querySelectorAll('.cb-menu-grid .cb-card');
 
   setCartDrawerOpen(false);
+
+  function syncOrderModeUI() {
+    orderModeButtons.forEach((btn) => {
+      btn.classList.toggle('cb-pill--active', btn.dataset.mode === orderMode);
+    });
+  }
+
+  orderModeButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = normalizeOrderMode(btn.dataset.mode);
+      orderMode = mode;
+      sessionStorage.setItem(ORDER_MODE_KEY, mode);
+      syncOrderModeUI();
+    });
+  });
+
+  syncOrderModeUI();
 
   function applyCategoryFilter(filter) {
     categoryChips.forEach((chip) => {
