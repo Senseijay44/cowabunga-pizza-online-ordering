@@ -14,16 +14,19 @@ const SIZES = [
     id: 'small',
     name: 'Small (10")',
     priceModifier: 0.9, // multiplier on base price
+    isAvailable: true,
   },
   {
     id: 'medium',
     name: 'Medium (12")',
     priceModifier: 1.0,
+    isAvailable: true,
   },
   {
     id: 'large',
     name: 'Large (14")',
     priceModifier: 1.3,
+    isAvailable: true,
   },
 ];
 
@@ -34,6 +37,7 @@ const BASES = [
     basePrice: 8.0,
     asset: '/assets/base/crust.png', // 🔁 update filename to your actual one
     layer: 10,
+    isAvailable: true,
   },
   // If you add more doughs later, put them here.
 ];
@@ -45,6 +49,7 @@ const SAUCES = [
     price: 0, // included
     asset: '/assets/sauce/marinara.png',
     layer: 20,
+    isAvailable: true,
   },
   {
     id: 'alfredo',
@@ -52,6 +57,7 @@ const SAUCES = [
     price: 0.75,
     asset: '/assets/sauce/alfredo.png',
     layer: 20,
+    isAvailable: true,
   },
   {
     id: 'barbecue',
@@ -60,6 +66,7 @@ const SAUCES = [
     price: 0.75,
     asset: '/assets/sauce/barbecue.png',
     layer: 20,
+    isAvailable: true,
   },
 ];
 
@@ -70,6 +77,7 @@ const CHEESES = [
     price: 0, // included
     asset: '/assets/cheese/cheese.png',
     layer: 30,
+    isAvailable: true,
   },
   // Add more cheeses later if needed
 ];
@@ -81,6 +89,7 @@ const TOPPINGS = [
     price: 1.25,
     asset: '/assets/toppings/pepperoni.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'italian_sausage',
@@ -88,6 +97,7 @@ const TOPPINGS = [
     price: 1.25,
     asset: '/assets/toppings/italian_sausage.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'ham',
@@ -95,6 +105,7 @@ const TOPPINGS = [
     price: 1.25,
     asset: '/assets/toppings/ham.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'salami',
@@ -102,6 +113,7 @@ const TOPPINGS = [
     price: 1.50,
     asset: '/assets/toppings/salami.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'bacon',
@@ -109,6 +121,7 @@ const TOPPINGS = [
     price: 1.50,
     asset: '/assets/toppings/bacon.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'chicken',
@@ -116,6 +129,7 @@ const TOPPINGS = [
     price: 1.50,
     asset: '/assets/toppings/chicken.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'beef',
@@ -123,6 +137,7 @@ const TOPPINGS = [
     price: 1.25,
     asset: '/assets/toppings/beef.png',
     layer: 40,
+    isAvailable: true,
   },
 
   // Veggies + Specialty
@@ -132,6 +147,7 @@ const TOPPINGS = [
     price: 1.00,
     asset: '/assets/toppings/mushrooms.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'onions',
@@ -139,6 +155,7 @@ const TOPPINGS = [
     price: 0.75,
     asset: '/assets/toppings/onions.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'red_onions',
@@ -146,6 +163,7 @@ const TOPPINGS = [
     price: 0.75,
     asset: '/assets/toppings/red_onions.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'green_peppers',
@@ -153,6 +171,7 @@ const TOPPINGS = [
     price: 1.00,
     asset: '/assets/toppings/green_peppers.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'banana_peppers',
@@ -160,6 +179,7 @@ const TOPPINGS = [
     price: 1.00,
     asset: '/assets/toppings/banana_peppers.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'jalapeno',
@@ -167,6 +187,7 @@ const TOPPINGS = [
     price: 1.00,
     asset: '/assets/toppings/jalapeno.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'spinach',
@@ -174,6 +195,7 @@ const TOPPINGS = [
     price: 1.00,
     asset: '/assets/toppings/spinach.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'tomatoes',
@@ -181,6 +203,7 @@ const TOPPINGS = [
     price: 1.00,
     asset: '/assets/toppings/tomatoes.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'black_olives',
@@ -188,6 +211,7 @@ const TOPPINGS = [
     price: 0.75,
     asset: '/assets/toppings/black_olives.png',
     layer: 40,
+    isAvailable: true,
   },
   {
     id: 'pineapple',
@@ -195,6 +219,7 @@ const TOPPINGS = [
     price: 1.00,
     asset: '/assets/toppings/pineapple.png',
     layer: 40,
+    isAvailable: true,
   },
 ];
 
