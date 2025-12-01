@@ -25,6 +25,7 @@ const {
   addMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  MENU_ITEM_CATEGORIES,
 } = require('../utils/menuStore');
 
 const { requireAdminApi } = require('../middleware/auth');
@@ -53,7 +54,7 @@ router.get('/admin/menu', requireAdminApi, (req, res) => {
 });
 
 router.post('/admin/menu', requireAdminApi, express.json(), (req, res) => {
-  const { name, description = '', price, isAvailable = true } = req.body || {};
+  const { name, description = '', price, isAvailable = true, category, imageUrl = '' } = req.body || {};
 
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'Name is required' });
@@ -64,10 +65,16 @@ router.post('/admin/menu', requireAdminApi, express.json(), (req, res) => {
     return res.status(400).json({ error: 'Price must be a positive number' });
   }
 
+  if (!MENU_ITEM_CATEGORIES.includes(category)) {
+    return res.status(400).json({ error: 'Invalid category' });
+  }
+
   const created = addMenuItem({
     name: name.trim(),
     description: description.trim(),
     price: priceNum,
+    category,
+    imageUrl: imageUrl.trim(),
     isAvailable,
   });
 
@@ -76,7 +83,7 @@ router.post('/admin/menu', requireAdminApi, express.json(), (req, res) => {
 
 router.put('/admin/menu/:id', requireAdminApi, express.json(), (req, res) => {
   const { id } = req.params;
-  const { name, description = '', price, isAvailable = true } = req.body || {};
+  const { name, description = '', price, isAvailable = true, category, imageUrl = '' } = req.body || {};
 
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'Name is required' });
@@ -87,10 +94,16 @@ router.put('/admin/menu/:id', requireAdminApi, express.json(), (req, res) => {
     return res.status(400).json({ error: 'Price must be a positive number' });
   }
 
+  if (!MENU_ITEM_CATEGORIES.includes(category)) {
+    return res.status(400).json({ error: 'Invalid category' });
+  }
+
   const updated = updateMenuItem(id, {
     name: name.trim(),
     description: description.trim(),
     price: priceNum,
+    category,
+    imageUrl: imageUrl.trim(),
     isAvailable,
   });
 

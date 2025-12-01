@@ -75,7 +75,36 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  const categoryChips = document.querySelectorAll('.js-category-chip');
+  const menuCards = document.querySelectorAll('.cb-menu-grid .cb-card');
+
   setCartDrawerOpen(false);
+
+  function applyCategoryFilter(filter) {
+    categoryChips.forEach((chip) => {
+      chip.classList.toggle('cb-chip--active', chip.dataset.filter === filter);
+    });
+
+    menuCards.forEach((card) => {
+      if (card.classList.contains('cb-card--highlight')) {
+        card.style.display = '';
+        return;
+      }
+
+      const category = card.dataset.category || 'pizza';
+      const shouldShow = filter === 'all' || category === filter;
+      card.style.display = shouldShow ? '' : 'none';
+    });
+  }
+
+  categoryChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const filter = chip.dataset.filter || 'all';
+      applyCategoryFilter(filter);
+    });
+  });
+
+  applyCategoryFilter('all');
 
   // -------------------------------------------------------------
   // CART STATE

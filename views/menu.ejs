@@ -19,12 +19,12 @@
 
     <!-- Category Filter (static for now) -->
     <div class="cb-category-bar">
-      <button class="cb-chip cb-chip--active" type="button">All</button>
-      <button class="cb-chip" type="button">Specialty Pizzas</button>
-      <button class="cb-chip" type="button">Build Your Own</button>
-      <button class="cb-chip" type="button">Sides</button>
-      <button class="cb-chip" type="button">Drinks</button>
-      <button class="cb-chip" type="button">Desserts</button>
+      <button class="cb-chip cb-chip--active js-category-chip" type="button" data-filter="all">All</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="pizza">Specialty Pizzas</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="build">Build Your Own</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="side">Sides</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="drink">Drinks</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="dessert">Desserts</button>
     </div>
 
     <!-- Menu Grid -->
@@ -32,7 +32,7 @@
       <% const pizzaImages = ['/images/pizza-1.png', '/images/pizza-2.png', '/images/pizza-3.png']; %>
 
       <% menuItems.forEach((item, idx) => { %>
-        <article class="cb-card">
+        <article class="cb-card" data-category="<%= item.category || 'pizza' %>">
           <img
             src="<%= item.imageUrl || pizzaImages[idx % pizzaImages.length] %>"
             alt="<%= item.name %>"
@@ -66,7 +66,7 @@
       <% }) %>
 
       <!-- Build Your Own highlight -->
-      <article class="cb-card cb-card--highlight">
+      <article class="cb-card cb-card--highlight" data-category="build">
         <div class="cb-card-body">
           <h3 class="cb-card-title">Build Your Own Pizza</h3>
           <p class="cb-card-desc">
