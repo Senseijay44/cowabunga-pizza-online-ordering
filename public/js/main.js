@@ -59,11 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const cartBarTotalEl = document.getElementById('cb-cart-bar-total');
   const cartBackdrop = document.getElementById('cb-cart-backdrop');
 
-  const sizeButtons = modal ? modal.querySelectorAll('.js-size-option') : [];
-  const crustSelect = modal ? modal.querySelector('.js-crust-select') : null;
-  const toppingCheckboxes = modal ? modal.querySelectorAll('.js-topping') : [];
+  const sizeContainer = modal ? modal.querySelector('.js-size-options') : null;
+  const toppingsContainer = modal ? modal.querySelector('.js-topping-grid') : null;
+  let sizeButtons = [];
+  let crustSelect = modal ? modal.querySelector('.js-crust-select') : null;
+  let toppingCheckboxes = [];
   const builderTotalEl = modal ? modal.querySelector('#cb-builder-total') : null;
   const builderAddBtn = modal ? modal.querySelector('.js-builder-add') : null;
+  let builderMenuConfig = null;
 
   const addMenuButtons = document.querySelectorAll('.js-add-menu-item');
 
@@ -278,17 +281,101 @@ document.addEventListener('DOMContentLoaded', () => {
   // MODAL BUILDER LOGIC
   // -------------------------------------------------------------
   const builderState = {
+    sizeId: null,
+    baseId: null,
     sizeLabel: 'Small',
-    sizePrice: 9.99,
+    sizePrice: 0,
     crustLabel: 'Hand Tossed',
     crustExtra: 0,
     toppings: [],
     toppingsTotal: 0
   };
 
+  function cacheBuilderControls() {
+    sizeButtons = modal ? Array.from(modal.querySelectorAll('.js-size-option')) : [];
+    crustSelect = modal ? modal.querySelector('.js-crust-select') : null;
+    toppingCheckboxes = modal ? Array.from(modal.querySelectorAll('.js-topping')) : [];
+  }
+
   function parsePrice(value, fallback = 0) {
     const n = parseFloat(value);
     return Number.isNaN(n) ? fallback : n;
+  }
+
+  function computeBasePrice(sizeId, baseId) {
+    if (!builderMenuConfig) return 0;
+    const size = (builderMenuConfig.sizes || []).find(s => s.id === sizeId) ||
+      (builderMenuConfig.sizes || [])[0];
+    const base = (builderMenuConfig.bases || []).find(b => b.id === baseId) ||
+      (builderMenuConfig.bases || [])[0];
+
+    const basePrice = base?.basePrice || 0;
+    const multiplier = size?.priceModifier || 1;
+    return basePrice * multiplier;
+  }
+
+  function renderSizeButtons() {
+    if (!sizeContainer || !builderMenuConfig || !Array.isArray(builderMenuConfig.sizes)) return;
+
+    const defaultBaseId = builderMenuConfig.rules?.defaultBaseId || builderMenuConfig.bases?.[0]?.id;
+
+    sizeContainer.innerHTML = '';
+    builderMenuConfig.sizes.forEach((size, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'cb-pill js-size-option';
+      if (index === 0) btn.classList.add('cb-pill--active');
+      btn.type = 'button';
+      btn.dataset.sizeId = size.id;
+      btn.dataset.size = size.name;
+      btn.dataset.price = computeBasePrice(size.id, defaultBaseId).toFixed(2);
+      btn.textContent = size.name;
+      sizeContainer.appendChild(btn);
+    });
+  }
+
+  function renderCrustOptions() {
+    if (!crustSelect || !builderMenuConfig || !Array.isArray(builderMenuConfig.bases)) return;
+
+    crustSelect.innerHTML = '';
+    builderMenuConfig.bases.forEach(base => {
+      const opt = document.createElement('option');
+      opt.value = base.id;
+      opt.dataset.extra = base.basePrice || 0;
+      opt.textContent = base.name;
+      crustSelect.appendChild(opt);
+    });
+  }
+
+  function renderToppingsGrid() {
+    if (!toppingsContainer || !builderMenuConfig || !Array.isArray(builderMenuConfig.toppings)) return;
+
+    toppingsContainer.innerHTML = '';
+    builderMenuConfig.toppings.forEach(topping => {
+      const label = document.createElement('label');
+      label.className = 'cb-checkbox';
+
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.className = 'js-topping';
+      input.dataset.price = topping.price || 0;
+      input.dataset.toppingId = topping.id;
+
+      const span = document.createElement('span');
+      const priceSuffix = topping.price ? ` (+$${Number(topping.price).toFixed(2)})` : '';
+      span.textContent = `${topping.name}${priceSuffix}`;
+
+      label.appendChild(input);
+      label.appendChild(span);
+      toppingsContainer.appendChild(label);
+    });
+  }
+
+  function renderBuilderOptions() {
+    if (!builderMenuConfig) return;
+    renderSizeButtons();
+    renderCrustOptions();
+    renderToppingsGrid();
+    cacheBuilderControls();
   }
 
   function recalcBuilderTotal() {
@@ -316,26 +403,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function initBuilderDefaults() {
-    if (!modal) return;
+    if (!modal || !builderMenuConfig) return;
 
     toppingCheckboxes.forEach(cb => (cb.checked = false));
 
+    const defaultSizeId = builderMenuConfig.rules?.defaultSizeId || builderMenuConfig.sizes?.[0]?.id;
+    const defaultBaseId = builderMenuConfig.rules?.defaultBaseId || builderMenuConfig.bases?.[0]?.id;
+
     if (sizeButtons.length > 0) {
-      sizeButtons.forEach(b => b.classList.remove('cb-pill--active'));
-      const first = sizeButtons[0];
-      first.classList.add('cb-pill--active');
-      builderState.sizeLabel = first.dataset.size;
-      builderState.sizePrice = parsePrice(first.dataset.price, 9.99);
+      sizeButtons.forEach(b => {
+        const isDefault = b.dataset.sizeId === defaultSizeId;
+        b.classList.toggle('cb-pill--active', isDefault);
+        if (isDefault) {
+          builderState.sizeId = b.dataset.sizeId;
+          builderState.sizeLabel = b.dataset.size;
+        }
+      });
+
+      if (!builderState.sizeId && sizeButtons[0]) {
+        const first = sizeButtons[0];
+        first.classList.add('cb-pill--active');
+        builderState.sizeId = first.dataset.sizeId;
+        builderState.sizeLabel = first.dataset.size;
+      }
     }
 
-    if (crustSelect && crustSelect.selectedOptions.length > 0) {
+    if (crustSelect) {
+      const baseToSelect = defaultBaseId || crustSelect.options[0]?.value;
+      crustSelect.value = baseToSelect;
       const opt = crustSelect.selectedOptions[0];
-      builderState.crustLabel = opt.textContent.trim();
-      builderState.crustExtra = parsePrice(opt.dataset.extra, 0);
-    } else {
-      builderState.crustLabel = 'Hand Tossed';
+      builderState.baseId = opt ? opt.value : builderState.baseId;
+      builderState.crustLabel = opt ? opt.textContent.trim() : builderState.crustLabel;
       builderState.crustExtra = 0;
     }
+
+    builderState.sizePrice = computeBasePrice(builderState.sizeId, builderState.baseId);
 
     builderState.toppings = [];
     builderState.toppingsTotal = 0;
@@ -359,26 +461,31 @@ document.addEventListener('DOMContentLoaded', () => {
   closeButtons.forEach(btn => btn.addEventListener('click', closeModal));
   if (backdrop) backdrop.addEventListener('click', closeModal);
 
-  sizeButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      sizeButtons.forEach(b => b.classList.remove('cb-pill--active'));
-      btn.classList.add('cb-pill--active');
-      builderState.sizeLabel = btn.dataset.size;
-      builderState.sizePrice = parsePrice(btn.dataset.price, 0);
-      recalcBuilderTotal();
+  function attachBuilderEvents() {
+    sizeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        sizeButtons.forEach(b => b.classList.remove('cb-pill--active'));
+        btn.classList.add('cb-pill--active');
+        builderState.sizeId = btn.dataset.sizeId;
+        builderState.sizeLabel = btn.dataset.size;
+        builderState.sizePrice = computeBasePrice(builderState.sizeId, builderState.baseId);
+        recalcBuilderTotal();
+      });
     });
-  });
 
-  if (crustSelect) {
-    crustSelect.addEventListener('change', () => {
-      const opt = crustSelect.selectedOptions[0];
-      builderState.crustLabel = opt.textContent.trim();
-      builderState.crustExtra = parsePrice(opt.dataset.extra, 0);
-      recalcBuilderTotal();
-    });
+    if (crustSelect) {
+      crustSelect.addEventListener('change', () => {
+        const opt = crustSelect.selectedOptions[0];
+        builderState.baseId = opt ? opt.value : builderState.baseId;
+        builderState.crustLabel = opt ? opt.textContent.trim() : builderState.crustLabel;
+        builderState.crustExtra = 0;
+        builderState.sizePrice = computeBasePrice(builderState.sizeId, builderState.baseId);
+        recalcBuilderTotal();
+      });
+    }
+
+    toppingCheckboxes.forEach(cb => cb.addEventListener('change', recomputeBuilderToppings));
   }
-
-  toppingCheckboxes.forEach(cb => cb.addEventListener('change', recomputeBuilderToppings));
 
   if (builderAddBtn) {
     builderAddBtn.addEventListener('click', () => {
@@ -399,6 +506,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       closeModal();
     });
+  }
+
+  async function initBuilderMenu() {
+    if (!modal) return;
+
+    try {
+      const res = await fetch('/api/menu');
+      if (!res.ok) throw new Error('Failed to load menu config');
+      builderMenuConfig = await res.json();
+
+      renderBuilderOptions();
+      attachBuilderEvents();
+      initBuilderDefaults();
+    } catch (err) {
+      console.error('Error initializing quick builder:', err);
+    }
   }
 
   // Preset menu items
@@ -437,4 +560,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial cart load
   loadCartFromServer();
+  initBuilderMenu();
 });
