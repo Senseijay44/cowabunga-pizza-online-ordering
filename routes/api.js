@@ -16,7 +16,12 @@ const {
   updateOrderStatus,
   STATUS,
 } = require('../utils/orderStore');
-const presetPizzas = require('../config/presetPizzas');
+const {
+  getMenuItems,
+  addMenuItem,
+  updateMenuItem,
+  deleteMenuItem,
+} = require('../utils/menuStore');
 
 const { requireAdminApi } = require('../middleware/auth');
 
@@ -38,6 +43,70 @@ const getCartFromSession = (req) => {
 // Menu + Pricing
 // ------------------------------------------------------
 
+// Admin: CRUD endpoints for preset menu items
+router.get('/admin/menu', requireAdminApi, (req, res) => {
+  res.json({ items: getMenuItems() });
+});
+
+router.post('/admin/menu', requireAdminApi, express.json(), (req, res) => {
+  const { name, description = '', price } = req.body || {};
+
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+
+  const priceNum = Number(price);
+  if (!Number.isFinite(priceNum) || priceNum <= 0) {
+    return res.status(400).json({ error: 'Price must be a positive number' });
+  }
+
+  const created = addMenuItem({
+    name: name.trim(),
+    description: description.trim(),
+    price: priceNum,
+  });
+
+  return res.status(201).json({ item: created });
+});
+
+router.put('/admin/menu/:id', requireAdminApi, express.json(), (req, res) => {
+  const { id } = req.params;
+  const { name, description = '', price } = req.body || {};
+
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+
+  const priceNum = Number(price);
+  if (!Number.isFinite(priceNum) || priceNum <= 0) {
+    return res.status(400).json({ error: 'Price must be a positive number' });
+  }
+
+  const updated = updateMenuItem(id, {
+    name: name.trim(),
+    description: description.trim(),
+    price: priceNum,
+  });
+
+  if (!updated) {
+    return res.status(404).json({ error: 'Menu item not found' });
+  }
+
+  return res.json({ item: updated });
+});
+
+router.delete('/admin/menu/:id', requireAdminApi, (req, res) => {
+  const { id } = req.params;
+
+  const deleted = deleteMenuItem(id);
+
+  if (!deleted) {
+    return res.status(404).json({ error: 'Menu item not found' });
+  }
+
+  return res.json({ success: true });
+});
+
 // GET /api/menu – full menu config for builder + preset pizzas
 router.get('/menu', (req, res) => {
   res.json({
@@ -47,7 +116,7 @@ router.get('/menu', (req, res) => {
     cheeses: menuConfig.CHEESES,
     toppings: menuConfig.TOPPINGS,
     rules: menuConfig.BUILDER_RULES,
-    presetPizzas,
+    presetPizzas: getMenuItems(),
   });
 });
 

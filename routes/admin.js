@@ -108,4 +108,11 @@ router.get('/orders', requireAdmin, (req, res) => {
   });
 });
 
+// GET /admin/menu – manage preset menu items
+router.get('/menu', requireAdmin, (req, res) => {
+  res.render('admin-menu', {
+    title: 'Admin · Menu',
+  });
+});
+
 module.exports = router;
