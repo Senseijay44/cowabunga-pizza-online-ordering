@@ -3,14 +3,15 @@ const express = require('express');
 const router = express.Router();
 
 const { getOrderById, createOrder } = require('../utils/orderStore');
-const presetPizzas = require('../config/presetPizzas');
+const { getMenuItems } = require('../utils/menuStore');
 
 // Home page
 router.get('/', (req, res) => {
+  const menuItems = getMenuItems();
   res.render('index', {
     title: 'Cowabunga Pizza',
     heroTagline: 'Powered by pizza. Crafted for legends.',
-    featured: presetPizzas.slice(0, 2),
+    featured: menuItems.slice(0, 2),
   });
 });
 
@@ -18,7 +19,7 @@ router.get('/', (req, res) => {
 router.get('/menu', (req, res) => {
   res.render('menu', {
     title: 'Menu',
-    menuItems: presetPizzas,
+    menuItems: getMenuItems(),
   });
 });
 

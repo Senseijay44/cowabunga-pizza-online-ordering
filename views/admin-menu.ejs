@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %> | Cowabunga Pizza</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="/" class="brand">Cowabunga Pizza</a>
+      <ul class="nav-links">
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/cart">Cart</a></li>
+        <li><a href="/checkout">Checkout</a></li>
+        <li><a href="/admin/orders">Admin Orders</a></li>
+        <li><a href="/admin/menu" class="active">Admin Menu</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="content">
+    <section class="page-header">
+      <h1>Admin · Menu</h1>
+      <p>Review and manage the preset menu items shown to customers.</p>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-form">
+        <h2 id="form-title">Add Menu Item</h2>
+        <form id="menu-form">
+          <div class="form-group">
+            <label for="menu-name">Name</label>
+            <input type="text" id="menu-name" name="name" required placeholder="Cowabunga Classic" />
+          </div>
+          <div class="form-group">
+            <label for="menu-description">Description</label>
+            <textarea id="menu-description" name="description" rows="3" placeholder="Short, tasty description"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="menu-price">Price ($)</label>
+            <input type="number" id="menu-price" name="price" min="0" step="0.01" required placeholder="14.99" />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="cb-btn cb-btn--primary" id="save-button">Save Item</button>
+            <button type="button" class="cb-btn cb-btn--outline" id="cancel-edit" hidden>Cancel Edit</button>
+          </div>
+          <p class="form-hint" id="form-hint">Fill out the fields and hit save to add a new item.</p>
+        </form>
+        <div class="form-message" id="menu-message" role="status"></div>
+      </div>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table" aria-live="polite">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Price</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="menu-table-body">
+            <tr>
+              <td colspan="4">Loading menu…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2025 Cowabunga Pizza. Powered by pizza.</p>
+  </footer>
+
+  <script src="/js/admin-menu.js"></script>
+</body>
+</html>

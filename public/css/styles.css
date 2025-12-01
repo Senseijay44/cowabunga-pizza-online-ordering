@@ -285,6 +285,12 @@ a {
   border-color: rgba(148, 163, 184, 0.6);
 }
 
+.cb-btn--danger {
+  background: #dc2626;
+  color: #f8fafc;
+  border-color: #dc2626;
+}
+
 .cb-btn--full {
   width: 100%;
 }
