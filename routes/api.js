@@ -10,6 +10,7 @@ const { calculatePizzaPrice } = require('../utils/pizzaPricing.js');
 const {
   DEFAULT_TAX_RATE,
   buildCustomPizzaMeta,
+  buildOrderPayload,
   computeTotals,
   normalizeCartItems,
 } = require('../utils/cartHelpers');
@@ -170,53 +171,23 @@ router.post('/price', express.json(), (req, res) => {
  */
 router.post('/checkout', express.json(), (req, res) => {
   try {
-    const { customer, cart, fulfillmentMethod: rawMethod } = req.body || {};
-    const fulfillmentMethod = rawMethod === 'delivery' ? 'delivery' : 'pickup';
-
-    const safeCustomer = customer || {};
-    const name = safeCustomer.name && String(safeCustomer.name).trim();
-    const phone = safeCustomer.phone && String(safeCustomer.phone).trim();
-    const address = safeCustomer.address && String(safeCustomer.address).trim();
-    const email = safeCustomer.email
-      ? String(safeCustomer.email).trim()
-      : null;
-
-    // Basic required fields
-    if (!name || !phone) {
-      return res
-        .status(400)
-        .json({ error: 'Missing customer name or phone' });
-    }
-
-    // For delivery orders we require an address; for pickup it can be empty
-    if (fulfillmentMethod === 'delivery' && !address) {
-      return res.status(400).json({ error: 'Address is required for delivery' });
-    }
-
-    const items = normalizeCartItems(cart);
-
-    if (items.length === 0) {
-      return res.status(400).json({ error: 'Cart is empty or invalid' });
-    }
-
-    // Recompute totals on the server
-    const { subtotal, tax, total } = computeTotals(items, DEFAULT_TAX_RATE);
-
-    const order = createOrder({
-      customer: {
-        name,
-        phone,
-        address: address || '', // keep field present even for pickup
-        email,                  // new optional field
-      },
-      items,
-      totals: { subtotal, tax, total },
+    const { customer, cart, fulfillmentMethod } = req.body || {};
+    const { order, error } = buildOrderPayload({
+      customer,
+      cart,
       fulfillmentMethod,
+      taxRate: DEFAULT_TAX_RATE,
     });
+
+    if (error) {
+      return res.status(400).json({ error });
+    }
+
+    const created = createOrder(order);
 
     return res.status(201).json({
       message: 'Order created',
-      orderId: order.id,
+      orderId: created.id,
     });
   } catch (err) {
     console.error('Checkout API error:', err);
