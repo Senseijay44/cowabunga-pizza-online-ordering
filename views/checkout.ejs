@@ -3,6 +3,12 @@
   <p>Almost there. Drop your details and we’ll handle the rest.</p>
 </section>
 
+<% if (errorMessage) { %>
+  <div class="alert alert-error">
+    <p><%= errorMessage %></p>
+  </div>
+<% } %>
+
 <section class="checkout-grid">
   <!-- Left: Checkout form -->
   <div class="checkout-form-card">

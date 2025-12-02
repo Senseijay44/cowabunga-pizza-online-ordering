@@ -15,20 +15,32 @@ const STATUS = {
   COMPLETE: 'Complete',
 };
 
-function persistOrders() {
+function ensureOrdersDir() {
+  fs.mkdirSync(path.dirname(orderFilePath), { recursive: true });
+}
+
+function saveOrdersSync() {
   try {
-    fs.mkdirSync(path.dirname(orderFilePath), { recursive: true });
-    fs.writeFile(orderFilePath, JSON.stringify(orders, null, 2), 'utf8', (err) => {
-      if (err) {
-        console.error('Failed to save orders to disk:', err);
-      }
-    });
+    ensureOrdersDir();
+    fs.writeFileSync(orderFilePath, JSON.stringify(orders, null, 2), 'utf8');
   } catch (err) {
-    console.error('Failed to prepare order persistence:', err);
+    console.error('Failed to save orders to disk:', err);
   }
 }
 
+function isValidOrder(order) {
+  const hasValidId = Number.isFinite(order?.id);
+  const hasValidTotals = Number.isFinite(order?.totals?.total);
+  const hasItemsArray = Array.isArray(order?.items);
+  const hasCustomer = !!order?.customer && typeof order.customer === 'object';
+
+  return hasValidId && hasValidTotals && hasItemsArray && hasCustomer;
+}
+
 function loadOrdersFromDisk() {
+  orders.length = 0;
+  nextOrderId = 1;
+
   try {
     if (!fs.existsSync(orderFilePath)) {
       return;
@@ -39,14 +51,32 @@ function loadOrdersFromDisk() {
       return;
     }
 
-    const savedOrders = JSON.parse(contents);
-    if (Array.isArray(savedOrders)) {
-      orders.push(...savedOrders);
-      const maxExistingId = orders.reduce((max, order) => {
-        return typeof order.id === 'number' && order.id > max ? order.id : max;
-      }, 0);
-      nextOrderId = Math.max(nextOrderId, maxExistingId + 1);
+    let savedOrders;
+    try {
+      savedOrders = JSON.parse(contents);
+    } catch (err) {
+      console.warn('orders.json contains invalid JSON. Starting with empty orders.', err);
+      return;
     }
+
+    if (!Array.isArray(savedOrders)) {
+      console.warn('orders.json is not an array. Starting with empty orders.');
+      return;
+    }
+
+    let maxExistingId = 0;
+    savedOrders.forEach((order, index) => {
+      if (isValidOrder(order)) {
+        orders.push(order);
+        if (order.id > maxExistingId) {
+          maxExistingId = order.id;
+        }
+      } else {
+        console.warn(`Skipping invalid order at index ${index} in orders.json`);
+      }
+    });
+
+    nextOrderId = orders.length ? maxExistingId + 1 : 1;
   } catch (err) {
     console.error('Failed to load orders from disk:', err);
     orders.length = 0;
@@ -77,7 +107,7 @@ function createOrder({ customer, items, totals, fulfillmentMethod = 'pickup' }) 
   };
 
   orders.push(order);
-  persistOrders();
+  saveOrdersSync();
   return order;
 }
 
@@ -113,7 +143,7 @@ function updateOrderStatus(id, newStatus) {
 
   order.status = newStatus;
   order.updatedAt = new Date().toISOString();
-  persistOrders();
+  saveOrdersSync();
   return order;
 }
 
