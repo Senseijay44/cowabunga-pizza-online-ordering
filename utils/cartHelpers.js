@@ -5,6 +5,15 @@ const { findMenuItemById } = require('./menuHelpers');
 
 const DEFAULT_TAX_RATE = 0.086;
 
+function sanitizeCustomer(customer = {}) {
+  const name = customer.name && String(customer.name).trim();
+  const phone = customer.phone && String(customer.phone).trim();
+  const address = customer.address && String(customer.address).trim();
+  const email = customer.email ? String(customer.email).trim() : null;
+
+  return { name, phone, address, email };
+}
+
 /**
  * Normalize cart items into a safe, serializable structure.
  * @param {Array} cart
@@ -90,9 +99,50 @@ function buildCustomPizzaMeta({ sizeId, baseId, sauceId, cheeseId, toppingIds })
   return parts.join(' | ');
 }
 
+/**
+ * Build a normalized order payload from raw request inputs.
+ * Returns an object with either { order } or { error }.
+ */
+function buildOrderPayload({ customer, cart, fulfillmentMethod, taxRate = DEFAULT_TAX_RATE }) {
+  const normalizedMethod = fulfillmentMethod === 'delivery' ? 'delivery' : 'pickup';
+  const { name, phone, address, email } = sanitizeCustomer(customer);
+
+  if (!name || !phone) {
+    return { error: 'Missing customer name or phone' };
+  }
+
+  if (normalizedMethod === 'delivery' && !address) {
+    return { error: 'Address is required for delivery' };
+  }
+
+  const items = normalizeCartItems(cart);
+
+  if (items.length === 0) {
+    return { error: 'Cart is empty or invalid' };
+  }
+
+  const totals = computeTotals(items, taxRate);
+
+  return {
+    order: {
+      customer: {
+        name,
+        phone,
+        address: address || '',
+        email,
+      },
+      items,
+      totals,
+      fulfillmentMethod: normalizedMethod,
+    },
+  };
+}
+
 module.exports = {
   DEFAULT_TAX_RATE,
   normalizeCartItems,
   computeTotals,
+  sanitizeCustomer,
+  buildOrderPayload,
   buildCustomPizzaMeta,
 };

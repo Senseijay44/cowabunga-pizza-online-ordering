@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const { getOrderById, createOrder } = require('../utils/orderStore');
+const { buildOrderPayload, DEFAULT_TAX_RATE } = require('../utils/cartHelpers');
 const { getMenuItems } = require('../utils/menuStore');
 
 // Home page
@@ -38,59 +39,33 @@ router.get('/checkout', (req, res) => {
 // POST /checkout – handle form submit and redirect to confirmation
 router.post('/checkout', (req, res) => {
   try {
-    let { name, phone, address, cartJson, fulfillmentMethod } = req.body;
+    const { name, phone, address, email, cartJson, fulfillmentMethod } = req.body;
 
-    // Normalize/trim
-    name = (name || '').trim();
-    phone = (phone || '').trim();
-    address = (address || '').trim();
-
-    if (!name || !phone || !address) {
-      return res.status(400).send('Missing required fields.');
-    }
-
-    // Naive phone check: at least 7 digits
-    const digitsOnly = phone.replace(/\D/g, '');
-    if (digitsOnly.length < 7) {
-      return res.status(400).send('Please enter a valid phone number.');
-    }
-
-    // Basic address sanity
-    if (address.length < 5) {
-      return res.status(400).send('Please enter a more complete address.');
-    }
-
-    let items = [];
+    let parsedCart = [];
     try {
-      if (cartJson) {
-        items = JSON.parse(cartJson);
-      }
+      parsedCart = cartJson ? JSON.parse(cartJson) : [];
     } catch (err) {
       console.error('Failed to parse cartJson:', err);
     }
 
-    const subtotal = items.reduce(
-      (sum, item) => sum + (item.price * item.qty),
-      0
-    );
-    const taxRate = 0.086; // 8.6% or whatever matches your UI
-    const tax = subtotal * taxRate;
-    const total = subtotal + tax;
-
-    const order = createOrder({
-      customer: { name, phone, address },
-      items,
-      totals: { subtotal, tax, total },
-      fulfillmentMethod: fulfillmentMethod === 'delivery' ? 'delivery' : 'pickup',
+    const { order, error } = buildOrderPayload({
+      customer: { name, phone, address, email },
+      cart: parsedCart,
+      fulfillmentMethod,
+      taxRate: DEFAULT_TAX_RATE,
     });
 
-    // Optional: clear cart from session after successful order
+    if (error) {
+      return res.status(400).send(error);
+    }
+
+    const created = createOrder(order);
+
     if (req.session) {
       req.session.cart = [];
     }
 
-    // Redirect to a confirmation page
-    res.redirect(`/order-confirmation/${order.id}`);
+    res.redirect(`/order-confirmation/${created.id}`);
   } catch (err) {
     console.error('Checkout form error:', err);
     res.status(500).send('Something went wrong with checkout.');
