@@ -208,12 +208,14 @@ document.addEventListener('DOMContentLoaded', () => {
           <p class="cb-cart-item-meta">${item.meta || ''}</p>
         </div>
         <div class="cb-cart-item-right">
-          <span class="cb-cart-item-price">${money(item.price * item.qty)}</span>
-          <div class="cb-qty-control">
-            <button class="js-cart-remove" data-id="${item.id}" aria-label="Remove item">✕</button>
-            <button class="js-cart-minus" data-id="${item.id}" data-index="${index}">-</button>
-            <span>${item.qty}</span>
-            <button class="js-cart-plus" data-id="${item.id}" data-index="${index}">+</button>
+          <div class="cb-cart-item-top">
+            <span class="cb-cart-item-price">${money(item.price * item.qty)}</span>
+            <button class="cb-cart-action-btn cb-cart-action-btn--remove js-cart-remove" data-id="${item.id}" aria-label="Remove item">✕</button>
+          </div>
+          <div class="cb-qty-control" aria-label="Update quantity">
+            <button class="cb-cart-action-btn js-cart-minus" data-id="${item.id}" data-index="${index}">-</button>
+            <span class="cb-cart-qty">${item.qty}</span>
+            <button class="cb-cart-action-btn js-cart-plus" data-id="${item.id}" data-index="${index}">+</button>
           </div>
         </div>
       `;
