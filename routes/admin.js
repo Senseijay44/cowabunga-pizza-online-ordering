@@ -26,6 +26,7 @@ const parseForm = express.urlencoded({ extended: true });
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
+const isAdminConfigured = Boolean(ADMIN_PASSWORD_HASH);
 
 if (!ADMIN_PASSWORD_HASH) {
   console.warn('WARNING: ADMIN_PASSWORD_HASH not set. Admin login will be disabled.');
@@ -57,14 +58,29 @@ router.get('/login', (req, res) => {
     return res.redirect('/admin/orders');
   }
 
-  res.render('admin-login', {
+  const statusCode = isAdminConfigured ? 200 : 503;
+
+  res.status(statusCode).render('admin-login', {
     title: 'Admin Login',
     error: null,
+    adminConfigured: isAdminConfigured,
+    adminConfigMessage: isAdminConfigured
+      ? null
+      : 'Admin login is not configured on this server.',
   });
 });
 
 // POST /admin/login – handle login submit
 router.post('/login', async (req, res) => {
+  if (!isAdminConfigured) {
+    return res.status(503).render('admin-login', {
+      title: 'Admin Login',
+      error: null,
+      adminConfigured: false,
+      adminConfigMessage: 'Admin login is not configured on this server.',
+    });
+  }
+
   const { username, password } = req.body || {};
 
   const user = (username || '').trim();
@@ -74,6 +90,8 @@ router.post('/login', async (req, res) => {
     return res.status(400).render('admin-login', {
       title: 'Admin Login',
       error: 'Please enter both username and password.',
+      adminConfigured: isAdminConfigured,
+      adminConfigMessage: null,
     });
   }
 
@@ -81,13 +99,8 @@ router.post('/login', async (req, res) => {
     return res.status(401).render('admin-login', {
       title: 'Admin Login',
       error: 'Invalid credentials.',
-    });
-  }
-
-  if (!ADMIN_PASSWORD_HASH) {
-    return res.status(500).render('admin-login', {
-      title: 'Admin Login',
-      error: 'Admin login is not configured on this server.',
+      adminConfigured: isAdminConfigured,
+      adminConfigMessage: null,
     });
   }
 
@@ -97,6 +110,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).render('admin-login', {
         title: 'Admin Login',
         error: 'Invalid credentials.',
+        adminConfigured: isAdminConfigured,
+        adminConfigMessage: null,
       });
     }
 
@@ -107,6 +122,8 @@ router.post('/login', async (req, res) => {
         return res.status(500).render('admin-login', {
           title: 'Admin Login',
           error: 'Something went wrong. Please try again.',
+          adminConfigured: isAdminConfigured,
+          adminConfigMessage: null,
         });
       }
 
@@ -120,6 +137,8 @@ router.post('/login', async (req, res) => {
     return res.status(500).render('admin-login', {
       title: 'Admin Login',
       error: 'Something went wrong. Please try again.',
+      adminConfigured: isAdminConfigured,
+      adminConfigMessage: null,
     });
   }
 });

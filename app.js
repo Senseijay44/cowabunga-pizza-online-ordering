@@ -21,15 +21,23 @@ app.set('layout', 'layout'); // uses views/layout.ejs
 // ------------------------------------------------------
 // SESSION CONFIG (HARDENED VERSION)
 // ------------------------------------------------------
-if (!process.env.SESSION_SECRET) {
+const isProduction = process.env.NODE_ENV === 'production';
+let sessionSecret = process.env.SESSION_SECRET;
+
+if (!sessionSecret) {
+  if (isProduction) {
+    throw new Error('SESSION_SECRET must be set in production.');
+  }
+
   console.warn(
     'WARNING: SESSION_SECRET is not set. Using a weak fallback. DO NOT USE THIS IN PRODUCTION.'
   );
+  sessionSecret = 'cowabunga-secret-dev-only';
 }
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'cowabunga-secret-dev-only',
+    secret: sessionSecret,
     resave: false,
 
     // Only create sessions when needed
