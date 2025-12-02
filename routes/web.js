@@ -4,6 +4,7 @@ const router = express.Router();
 
 const { getOrderById, createOrder } = require('../utils/orderStore');
 const { buildOrderPayload, DEFAULT_TAX_RATE } = require('../utils/cartHelpers');
+const { getCartFromSession } = require('../utils/cartSession');
 const { getMenuItems } = require('../utils/menuStore');
 
 // Home page
@@ -39,24 +40,25 @@ router.get('/checkout', (req, res) => {
 // POST /checkout – handle form submit and redirect to confirmation
 router.post('/checkout', (req, res) => {
   try {
-    const { name, phone, address, email, cartJson, fulfillmentMethod } = req.body;
+    const { name, phone, address, email, fulfillmentMethod } = req.body;
 
-    let parsedCart = [];
-    try {
-      parsedCart = cartJson ? JSON.parse(cartJson) : [];
-    } catch (err) {
-      console.error('Failed to parse cartJson:', err);
-    }
+    const sessionCart = getCartFromSession(req);
 
     const { order, error } = buildOrderPayload({
       customer: { name, phone, address, email },
-      cart: parsedCart,
+      cart: sessionCart,
       fulfillmentMethod,
       taxRate: DEFAULT_TAX_RATE,
     });
 
     if (error) {
-      return res.status(400).send(error);
+      const isEmptyCart = error === 'Cart is empty or invalid';
+      return res.status(400).render('checkout', {
+        title: 'Checkout',
+        errorMessage: isEmptyCart
+          ? 'Your cart is empty. Please add items from the menu before checking out.'
+          : error,
+      });
     }
 
     const created = createOrder(order);
