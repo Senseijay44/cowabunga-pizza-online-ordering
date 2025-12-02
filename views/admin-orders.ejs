@@ -1,112 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title><%= title %> | Cowabunga Pizza</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/css/styles.css">
-</head>
-<body>
-  <header class="site-header">
-    <nav class="nav">
-      <a href="/" class="brand">Cowabunga Pizza</a>
-      <ul class="nav-links">
-        <li><a href="/menu">Menu</a></li>
-        <li><a href="/menu#cart-panel">Cart</a></li>
-        <li><a href="/checkout">Checkout</a></li>
-        <li><a href="/admin/orders" class="active">Admin Orders</a></li>
-        <li><a href="/admin/menu">Admin Menu</a></li>
-      </ul>
-    </nav>
-  </header>
+<section class="page-header">
+  <h1>Admin · Orders</h1>
+  <p>Lightweight kitchen view for the current sprint.</p>
+</section>
 
-  <main class="content">
-    <section class="page-header">
-      <h1>Admin · Orders</h1>
-      <p>Lightweight kitchen view for the current sprint.</p>
-    </section>
-
-    <% if (!orders || orders.length === 0) { %>
+<div class="admin-main">
+  <% if (!orders || orders.length === 0) { %>
+    <div class="admin-table-card admin-empty-state">
       <p>No orders yet. Go place one from the menu to see it here.</p>
-    <% } else { %>
-      <div class="admin-table-wrapper">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Placed At</th>
-              <th>Customer</th>
-              <th>Contact</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Update Status</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% orders.forEach(order => { %>
-              <tr data-order-id="<%= order.id %>">
-                <td>#<%= order.id %></td>
-                <td>
-                  <span><%= new Date(order.createdAt).toLocaleString() %></span>
-                </td>
-                <td>
-                  <strong><%= order.customer.name %></strong><br>
-                  <small>
-                    <% if (order.fulfillmentMethod === 'delivery') { %>
-                      <strong>Delivery to:</strong><br>
-                      <%= order.customer.address %>
-                    <% } else { %>
-                      <span class="muted">Pickup</span>
-                      <% if (order.customer.address) { %>
-                        <br><%= order.customer.address %>
-                      <% } %>
-                    <% } %>
-                  </small>
-                </td>
-                <td>
-                  <span><%= order.customer.phone %></span>
-                  <% if (order.customer.email) { %>
-                    <br>
-                    <small><%= order.customer.email %></small>
-                  <% } %>
-                </td>
-                <td>
-                  <strong>
-                    <%= order.fulfillmentMethod === 'delivery' ? 'Delivery' : 'Pickup' %>
-                  </strong>
-                </td>
-                <td class="order-status-cell">
-                  <%= order.status %>
-                </td>
-                <td>
-                  <select class="order-status-select">
-                    <% Object.values(STATUS).forEach(s => { %>
-                      <option value="<%= s %>" <%= s === order.status ? 'selected' : '' %>>
-                        <%= s %>
-                      </option>
-                    <% }); %>
-                  </select>
-                </td>
-                <td>
-                  <% if (order.totals && typeof order.totals.total === 'number') { %>
-                    $<%= order.totals.total.toFixed(2) %>
+    </div>
+  <% } else { %>
+    <div class="admin-table-card">
+      <table class="admin-orders-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Placed At</th>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Update Status</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% orders.forEach(order => { %>
+            <tr data-order-id="<%= order.id %>">
+              <td class="admin-order-id">#<%= order.id %></td>
+              <td class="admin-order-date">
+                <span><%= new Date(order.createdAt).toLocaleString() %></span>
+              </td>
+              <td class="admin-customer">
+                <div class="admin-customer-name"><%= order.customer.name %></div>
+                <div class="admin-customer-address">
+                  <% if (order.fulfillmentMethod === 'delivery') { %>
+                    <strong>Delivery to:</strong> <%= order.customer.address %>
                   <% } else { %>
-                    -
+                    <span class="muted">Pickup</span>
+                    <% if (order.customer.address) { %>
+                      · <%= order.customer.address %>
+                    <% } %>
                   <% } %>
-                </td>
-              </tr>
-            <% }); %>
-          </tbody>
-        </table>
-      </div>
-    <% } %>
-  </main>
+                </div>
+              </td>
+              <td class="admin-contact">
+                <div><%= order.customer.phone %></div>
+                <% if (order.customer.email) { %>
+                  <div class="admin-contact-email"><%= order.customer.email %></div>
+                <% } %>
+              </td>
+              <td class="admin-fulfillment">
+                <strong><%= order.fulfillmentMethod === 'delivery' ? 'Delivery' : 'Pickup' %></strong>
+              </td>
+              <td class="order-status-cell">
+                <%= order.status %>
+              </td>
+              <td>
+                <select class="order-status-select">
+                  <% Object.values(STATUS).forEach(s => { %>
+                    <option value="<%= s %>" <%= s === order.status ? 'selected' : '' %>>
+                      <%= s %>
+                    </option>
+                  <% }); %>
+                </select>
+              </td>
+              <td class="admin-order-total">
+                <% if (order.totals && typeof order.totals.total === 'number') { %>
+                  $<%= order.totals.total.toFixed(2) %>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
 
-  <footer class="site-footer">
-    <p>&copy; 2025 Cowabunga Pizza. Powered by pizza.</p>
-  </footer>
-
-  <script src="/js/admin-orders.js"></script>
-</body>
-</html>
+<script src="/js/admin-orders.js"></script>
