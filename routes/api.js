@@ -28,22 +28,11 @@ const {
   deleteMenuItem,
   MENU_ITEM_CATEGORIES,
 } = require('../utils/menuStore');
+const { getCartFromSession } = require('../utils/cartSession');
 
 const { requireAdminApi } = require('../middleware/auth');
 
 const ALLOWED_STATUSES = Object.values(STATUS);
-
-// ------------------------------------------------------
-// Helpers
-// ------------------------------------------------------
-
-const getCartFromSession = (req) => {
-  if (!Array.isArray(req.session.cart)) {
-    req.session.cart = [];
-  }
-
-  return req.session.cart;
-};
 
 // ------------------------------------------------------
 // Menu + Pricing
