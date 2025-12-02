@@ -9,37 +9,137 @@
     <h2>Customer Details</h2>
 
     <form action="/checkout" method="POST" class="form checkout-form">
+      <!-- Order type -->
       <div class="form-row">
         <label>Order Type</label>
         <div class="cb-order-bar">
           <div class="cb-order-mode">
-            <button class="cb-pill cb-pill--active js-checkout-mode" type="button" data-mode="pickup">Pickup</button>
-            <button class="cb-pill js-checkout-mode" type="button" data-mode="delivery">Delivery</button>
+            <button
+              class="cb-pill cb-pill--active js-checkout-mode"
+              type="button"
+              data-mode="pickup"
+            >
+              Pickup
+            </button>
+            <button
+              class="cb-pill js-checkout-mode"
+              type="button"
+              data-mode="delivery"
+            >
+              Delivery
+            </button>
           </div>
           <div class="cb-order-info">
-            <span>Currently set to: <strong id="checkout-fulfillment-label">Pickup</strong></span>
+            <span>
+              Currently set to:
+              <strong id="checkout-fulfillment-label">Pickup</strong>
+            </span>
           </div>
         </div>
       </div>
 
-      <div class="form-row">
-        <label for="name">Name<span class="required">*</span></label>
-        <input id="name" name="name" type="text" required />
+      <!-- Name / Phone -->
+      <div class="form-row form-row--split">
+        <div class="form-field">
+          <label for="name">Name<span class="required">*</span></label>
+          <input id="name" name="name" type="text" required class="form-input" />
+        </div>
+
+        <div class="form-field">
+          <label for="phone">Phone<span class="required">*</span></label>
+          <input id="phone" name="phone" type="tel" required class="form-input" />
+        </div>
       </div>
 
+      <!-- Email -->
       <div class="form-row">
-        <label for="phone">Phone<span class="required">*</span></label>
-        <input id="phone" name="phone" type="tel" required />
+        <label for="email">Email (for receipts and deals)</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          class="form-input"
+          placeholder="you@example.com"
+        />
       </div>
 
+      <!-- Address block -->
       <div class="form-row">
-        <label for="address">Address<span class="required">*</span></label>
-        <textarea id="address" name="address" rows="3" required></textarea>
+        <div class="form-label-stack">
+          <label>Address<span class="required">*</span></label>
+          <p class="form-helper">
+            Required for delivery. Optional for pickup.
+          </p>
+        </div>
+
+        <!-- Address lines -->
+        <div class="address-grid">
+          <div class="form-field">
+            <label for="addressLine1" class="sr-only">Address Line 1</label>
+            <input
+              id="addressLine1"
+              type="text"
+              class="form-input"
+              placeholder="Street address"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="addressLine2" class="sr-only">Address Line 2</label>
+            <input
+              id="addressLine2"
+              type="text"
+              class="form-input"
+              placeholder="Apt, suite, unit (optional)"
+            />
+          </div>
+
+          <div class="address-row address-row--city-state-zip">
+            <div class="form-field">
+              <label for="city" class="sr-only">City</label>
+              <input
+                id="city"
+                type="text"
+                class="form-input"
+                placeholder="City"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="state" class="sr-only">State</label>
+              <input
+                id="state"
+                type="text"
+                maxlength="2"
+                class="form-input"
+                placeholder="ST"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="zip" class="sr-only">Zip</label>
+              <input
+                id="zip"
+                type="text"
+                class="form-input"
+                placeholder="ZIP"
+              />
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Hidden field where we'll drop full address for backend -->
+      <textarea id="address" name="address" rows="3" class="sr-only"></textarea>
 
       <!-- Hidden field where we'll drop cart JSON from /api/cart -->
       <input type="hidden" id="cartJson" name="cartJson" value="" />
-      <input type="hidden" name="fulfillmentMethod" id="fulfillment-method-input" value="pickup" />
+      <input
+        type="hidden"
+        name="fulfillmentMethod"
+        id="fulfillment-method-input"
+        value="pickup"
+      />
 
       <button type="submit" class="btn-primary btn-full">
         Place Order
@@ -71,7 +171,8 @@
         btn.classList.toggle('cb-pill--active', btn.dataset.mode === normalized);
       });
       if (fulfillmentLabel) {
-        fulfillmentLabel.textContent = normalized === 'delivery' ? 'Delivery' : 'Pickup';
+        fulfillmentLabel.textContent =
+          normalized === 'delivery' ? 'Delivery' : 'Pickup';
       }
     };
 
@@ -81,6 +182,23 @@
     modeButtons.forEach((btn) => {
       btn.addEventListener('click', () => applyMode(btn.dataset.mode));
     });
+
+    // Build full address string for backend compatibility
+    const form = document.querySelector('.checkout-form');
+    const fullAddressField = document.getElementById('address');
+
+    form.addEventListener('submit', () => {
+      const parts = [
+        document.getElementById('addressLine1').value.trim(),
+        document.getElementById('addressLine2').value.trim(),
+        document.getElementById('city').value.trim(),
+        document.getElementById('state').value.trim(),
+        document.getElementById('zip').value.trim()
+      ].filter(Boolean);
+
+      fullAddressField.value = parts.join(', ');
+    });
   });
 </script>
+
 <script src="/js/checkout.js"></script>

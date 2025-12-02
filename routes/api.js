@@ -160,16 +160,37 @@ router.post('/price', express.json(), (req, res) => {
 /**
  * EP-004: Checkout API
  * POST /api/checkout
- * Expects JSON: { customer: { name, phone, address }, cart: [...] }
+ * Expects JSON:
+ * {
+ *   customer: { name, phone, address, email? },
+ *   cart: [...],
+ *   fulfillmentMethod: "pickup" | "delivery"
+ * }
  * Totals are recomputed on the server.
  */
 router.post('/checkout', express.json(), (req, res) => {
   try {
-    const { customer, cart } = req.body || {};
-    const fulfillmentMethod = req.body?.fulfillmentMethod === 'delivery' ? 'delivery' : 'pickup';
+    const { customer, cart, fulfillmentMethod: rawMethod } = req.body || {};
+    const fulfillmentMethod = rawMethod === 'delivery' ? 'delivery' : 'pickup';
 
-    if (!customer || !customer.name || !customer.phone || !customer.address) {
-      return res.status(400).json({ error: 'Missing customer information' });
+    const safeCustomer = customer || {};
+    const name = safeCustomer.name && String(safeCustomer.name).trim();
+    const phone = safeCustomer.phone && String(safeCustomer.phone).trim();
+    const address = safeCustomer.address && String(safeCustomer.address).trim();
+    const email = safeCustomer.email
+      ? String(safeCustomer.email).trim()
+      : null;
+
+    // Basic required fields
+    if (!name || !phone) {
+      return res
+        .status(400)
+        .json({ error: 'Missing customer name or phone' });
+    }
+
+    // For delivery orders we require an address; for pickup it can be empty
+    if (fulfillmentMethod === 'delivery' && !address) {
+      return res.status(400).json({ error: 'Address is required for delivery' });
     }
 
     const items = normalizeCartItems(cart);
@@ -183,9 +204,10 @@ router.post('/checkout', express.json(), (req, res) => {
 
     const order = createOrder({
       customer: {
-        name: customer.name,
-        phone: customer.phone,
-        address: customer.address,
+        name,
+        phone,
+        address: address || '', // keep field present even for pickup
+        email,                  // new optional field
       },
       items,
       totals: { subtotal, tax, total },
@@ -239,53 +261,6 @@ router.get('/orders/:id/details', (req, res) => {
 
   // Return the full stored order object
   return res.json(order);
-});
-
-// PATCH /api/orders/:id/status – update order status in the workflow (admin only)
-router.patch(
-  '/orders/:id/status',
-  requireAdminApi,
-  express.json(),
-  (req, res) => {
-    const id = Number(req.params.id);
-    const { status } = req.body || {};
-
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid order id' });
-    }
-
-    if (!status || typeof status !== 'string') {
-      return res.status(400).json({ error: 'Missing status in request body' });
-    }
-
-    if (!ALLOWED_STATUSES.includes(status)) {
-      return res.status(400).json({
-        error: 'Invalid status value',
-        allowed: ALLOWED_STATUSES,
-      });
-    }
-
-    try {
-      const updated = updateOrderStatus(id, status);
-      if (!updated) {
-        return res.status(404).json({ error: 'Order not found' });
-      }
-
-      return res.json({
-        orderId: updated.id,
-        status: updated.status,
-        updatedAt: updated.updatedAt,
-      });
-    } catch (err) {
-      console.error('Order status update error:', err);
-      return res.status(500).json({ error: 'Failed to update order status' });
-    }
-  }
-);
-
-// POST /api/payment – still a stub for now
-router.post('/payment', (req, res) => {
-  res.json({ message: 'Payment processed (stub)', status: 'success' });
 });
 
 // ------------------------------------------------------

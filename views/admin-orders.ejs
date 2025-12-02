@@ -54,21 +54,27 @@
                   <strong><%= order.customer.name %></strong><br>
                   <small>
                     <% if (order.fulfillmentMethod === 'delivery') { %>
-                      <strong>Delivery:</strong> <%= order.customer.address %>
-                    <% } else { %>
-                      <span class="muted">Pickup</span><br>
+                      <strong>Delivery to:</strong><br>
                       <%= order.customer.address %>
+                    <% } else { %>
+                      <span class="muted">Pickup</span>
+                      <% if (order.customer.address) { %>
+                        <br><%= order.customer.address %>
+                      <% } %>
                     <% } %>
                   </small>
                 </td>
                 <td>
                   <span><%= order.customer.phone %></span>
+                  <% if (order.customer.email) { %>
+                    <br>
+                    <small><%= order.customer.email %></small>
+                  <% } %>
                 </td>
                 <td>
-                  <strong><%= order.fulfillmentMethod === 'delivery' ? 'Delivery' : 'Pickup' %></strong>
-                  <% if (order.fulfillmentMethod === 'delivery') { %>
-                    <div class="order-address-emphasis"><small><%= order.customer.address %></small></div>
-                  <% } %>
+                  <strong>
+                    <%= order.fulfillmentMethod === 'delivery' ? 'Delivery' : 'Pickup' %>
+                  </strong>
                 </td>
                 <td class="order-status-cell">
                   <%= order.status %>
@@ -76,7 +82,7 @@
                 <td>
                   <select class="order-status-select">
                     <% Object.values(STATUS).forEach(s => { %>
-                      <option value="<%= s %>" <%= s === order.status ? 'selected' : '' %> >
+                      <option value="<%= s %>" <%= s === order.status ? 'selected' : '' %>>
                         <%= s %>
                       </option>
                     <% }); %>
@@ -86,7 +92,7 @@
                   <% if (order.totals && typeof order.totals.total === 'number') { %>
                     $<%= order.totals.total.toFixed(2) %>
                   <% } else { %>
-                    —
+                    -
                   <% } %>
                 </td>
               </tr>
