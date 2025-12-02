@@ -63,6 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const toppingsContainer = modal ? modal.querySelector('.js-topping-grid') : null;
   let sizeButtons = [];
   let crustSelect = modal ? modal.querySelector('.js-crust-select') : null;
+  let sauceSelect = modal ? modal.querySelector('.js-sauce-select') : null;
+  let cheeseSelect = modal ? modal.querySelector('.js-cheese-select') : null;
   let toppingCheckboxes = [];
   const builderTotalEl = modal ? modal.querySelector('#cb-builder-total') : null;
   const builderAddBtn = modal ? modal.querySelector('.js-builder-add') : null;
@@ -334,17 +336,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const builderState = {
     sizeId: null,
     baseId: null,
+    sauceId: null,
+    cheeseId: null,
     sizeLabel: 'Small',
     sizePrice: 0,
     crustLabel: 'Hand Tossed',
     crustExtra: 0,
+    sauceLabel: 'Marinara',
+    saucePrice: 0,
+    cheeseLabel: 'Mozzarella',
+    cheesePrice: 0,
     toppings: [],
+    toppingIds: [],
     toppingsTotal: 0
   };
 
   function cacheBuilderControls() {
     sizeButtons = modal ? Array.from(modal.querySelectorAll('.js-size-option')) : [];
     crustSelect = modal ? modal.querySelector('.js-crust-select') : null;
+    sauceSelect = modal ? modal.querySelector('.js-sauce-select') : null;
+    cheeseSelect = modal ? modal.querySelector('.js-cheese-select') : null;
     toppingCheckboxes = modal ? Array.from(modal.querySelectorAll('.js-topping')) : [];
   }
 
@@ -363,6 +374,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const basePrice = base?.basePrice || 0;
     const multiplier = size?.priceModifier || 1;
     return basePrice * multiplier;
+  }
+
+  function computeSaucePrice(sauceId) {
+    if (!builderMenuConfig) return 0;
+    const sauce = (builderMenuConfig.sauces || []).find(s => s.id === sauceId) ||
+      (builderMenuConfig.sauces || [])[0];
+    return sauce?.price || 0;
+  }
+
+  function computeCheesePrice(cheeseId) {
+    if (!builderMenuConfig) return 0;
+    const cheese = (builderMenuConfig.cheeses || []).find(c => c.id === cheeseId) ||
+      (builderMenuConfig.cheeses || [])[0];
+    return cheese?.price || 0;
   }
 
   function renderSizeButtons() {
@@ -397,6 +422,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function renderSauceOptions() {
+    if (!sauceSelect || !builderMenuConfig || !Array.isArray(builderMenuConfig.sauces)) return;
+
+    sauceSelect.innerHTML = '';
+    builderMenuConfig.sauces.forEach(sauce => {
+      const opt = document.createElement('option');
+      const priceSuffix = sauce.price ? ` (+$${Number(sauce.price).toFixed(2)})` : '';
+      opt.value = sauce.id;
+      opt.dataset.extra = sauce.price || 0;
+      opt.textContent = `${sauce.name}${priceSuffix}`;
+      sauceSelect.appendChild(opt);
+    });
+  }
+
+  function renderCheeseOptions() {
+    if (!cheeseSelect || !builderMenuConfig || !Array.isArray(builderMenuConfig.cheeses)) return;
+
+    cheeseSelect.innerHTML = '';
+    builderMenuConfig.cheeses.forEach(cheese => {
+      const opt = document.createElement('option');
+      const priceSuffix = cheese.price ? ` (+$${Number(cheese.price).toFixed(2)})` : '';
+      opt.value = cheese.id;
+      opt.dataset.extra = cheese.price || 0;
+      opt.textContent = `${cheese.name}${priceSuffix}`;
+      cheeseSelect.appendChild(opt);
+    });
+  }
+
   function renderToppingsGrid() {
     if (!toppingsContainer || !builderMenuConfig || !Array.isArray(builderMenuConfig.toppings)) return;
 
@@ -425,19 +478,61 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!builderMenuConfig) return;
     renderSizeButtons();
     renderCrustOptions();
+    renderSauceOptions();
+    renderCheeseOptions();
     renderToppingsGrid();
     cacheBuilderControls();
   }
 
   function recalcBuilderTotal() {
     if (!builderTotalEl) return 0;
-    const total = builderState.sizePrice + builderState.crustExtra + builderState.toppingsTotal;
+    const total =
+      builderState.sizePrice +
+      builderState.crustExtra +
+      builderState.saucePrice +
+      builderState.cheesePrice +
+      builderState.toppingsTotal;
     builderTotalEl.textContent = money(total);
     return total;
   }
 
+  async function updateBuilderPrice() {
+    if (!builderMenuConfig || !builderTotalEl) return;
+
+    const payload = {
+      sizeId: builderState.sizeId,
+      baseId: builderState.baseId,
+      sauceId: builderState.sauceId,
+      cheeseId: builderState.cheeseId,
+      toppings: builderState.toppingIds || [],
+      toppingIds: builderState.toppingIds || [],
+      quantity: 1,
+    };
+
+    try {
+      const res = await fetch('/api/price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`Pricing request failed: ${res.status}`);
+
+      const pricing = await res.json();
+      builderState.sizePrice = pricing.breakdown?.base ?? builderState.sizePrice;
+      builderState.saucePrice = pricing.breakdown?.sauce ?? builderState.saucePrice;
+      builderState.cheesePrice = pricing.breakdown?.cheese ?? builderState.cheesePrice;
+      builderState.toppingsTotal = pricing.breakdown?.toppings ?? builderState.toppingsTotal;
+      builderTotalEl.textContent = money(pricing.total || 0);
+    } catch (err) {
+      console.error('Builder price update failed:', err);
+      recalcBuilderTotal();
+    }
+  }
+
   function recomputeBuilderToppings() {
     builderState.toppings = [];
+    builderState.toppingIds = [];
     let sum = 0;
 
     toppingCheckboxes.forEach(cb => {
@@ -445,12 +540,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const label = cb.closest('label');
         const span = label ? label.querySelector('span') : null;
         if (span) builderState.toppings.push(span.textContent.replace(/\s*\(.*\)$/, ''));
+        builderState.toppingIds.push(cb.dataset.toppingId);
         sum += parsePrice(cb.dataset.price, 0);
       }
     });
 
     builderState.toppingsTotal = sum;
     recalcBuilderTotal();
+    updateBuilderPrice();
   }
 
   function initBuilderDefaults() {
@@ -460,6 +557,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const defaultSizeId = builderMenuConfig.rules?.defaultSizeId || builderMenuConfig.sizes?.[0]?.id;
     const defaultBaseId = builderMenuConfig.rules?.defaultBaseId || builderMenuConfig.bases?.[0]?.id;
+    const defaultSauceId = builderMenuConfig.rules?.defaultSauceId || builderMenuConfig.sauces?.[0]?.id;
+    const defaultCheeseId = builderMenuConfig.rules?.defaultCheeseId || builderMenuConfig.cheeses?.[0]?.id;
 
     if (sizeButtons.length > 0) {
       sizeButtons.forEach(b => {
@@ -488,11 +587,31 @@ document.addEventListener('DOMContentLoaded', () => {
       builderState.crustExtra = 0;
     }
 
+    if (sauceSelect) {
+      const sauceToSelect = defaultSauceId || sauceSelect.options[0]?.value;
+      sauceSelect.value = sauceToSelect;
+      const opt = sauceSelect.selectedOptions[0];
+      builderState.sauceId = opt ? opt.value : builderState.sauceId;
+      builderState.sauceLabel = opt ? opt.textContent.trim() : builderState.sauceLabel;
+      builderState.saucePrice = computeSaucePrice(builderState.sauceId);
+    }
+
+    if (cheeseSelect) {
+      const cheeseToSelect = defaultCheeseId || cheeseSelect.options[0]?.value;
+      cheeseSelect.value = cheeseToSelect;
+      const opt = cheeseSelect.selectedOptions[0];
+      builderState.cheeseId = opt ? opt.value : builderState.cheeseId;
+      builderState.cheeseLabel = opt ? opt.textContent.trim() : builderState.cheeseLabel;
+      builderState.cheesePrice = computeCheesePrice(builderState.cheeseId);
+    }
+
     builderState.sizePrice = computeBasePrice(builderState.sizeId, builderState.baseId);
 
     builderState.toppings = [];
+    builderState.toppingIds = [];
     builderState.toppingsTotal = 0;
     recalcBuilderTotal();
+    updateBuilderPrice();
   }
 
   function openModal() {
@@ -521,6 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
         builderState.sizeLabel = btn.dataset.size;
         builderState.sizePrice = computeBasePrice(builderState.sizeId, builderState.baseId);
         recalcBuilderTotal();
+        updateBuilderPrice();
       });
     });
 
@@ -532,6 +652,29 @@ document.addEventListener('DOMContentLoaded', () => {
         builderState.crustExtra = 0;
         builderState.sizePrice = computeBasePrice(builderState.sizeId, builderState.baseId);
         recalcBuilderTotal();
+        updateBuilderPrice();
+      });
+    }
+
+    if (sauceSelect) {
+      sauceSelect.addEventListener('change', () => {
+        const opt = sauceSelect.selectedOptions[0];
+        builderState.sauceId = opt ? opt.value : builderState.sauceId;
+        builderState.sauceLabel = opt ? opt.textContent.trim() : builderState.sauceLabel;
+        builderState.saucePrice = computeSaucePrice(builderState.sauceId);
+        recalcBuilderTotal();
+        updateBuilderPrice();
+      });
+    }
+
+    if (cheeseSelect) {
+      cheeseSelect.addEventListener('change', () => {
+        const opt = cheeseSelect.selectedOptions[0];
+        builderState.cheeseId = opt ? opt.value : builderState.cheeseId;
+        builderState.cheeseLabel = opt ? opt.textContent.trim() : builderState.cheeseLabel;
+        builderState.cheesePrice = computeCheesePrice(builderState.cheeseId);
+        recalcBuilderTotal();
+        updateBuilderPrice();
       });
     }
 
@@ -539,22 +682,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (builderAddBtn) {
-    builderAddBtn.addEventListener('click', () => {
-      const total = recalcBuilderTotal() || 0;
-      const name = `Custom Pizza (${builderState.sizeLabel})`;
-      let meta = builderState.crustLabel;
+    builderAddBtn.addEventListener('click', async () => {
+      const sizeId = builderState.sizeId || builderMenuConfig?.rules?.defaultSizeId || builderMenuConfig?.sizes?.[0]?.id;
+      const baseId = builderState.baseId || builderMenuConfig?.rules?.defaultBaseId || builderMenuConfig?.bases?.[0]?.id;
+      const sauceId = builderState.sauceId || builderMenuConfig?.rules?.defaultSauceId || builderMenuConfig?.sauces?.[0]?.id;
+      const cheeseId = builderState.cheeseId || builderMenuConfig?.rules?.defaultCheeseId || builderMenuConfig?.cheeses?.[0]?.id;
 
-      if (builderState.toppings.length > 0) {
-        meta += ' • ' + builderState.toppings.join(', ');
-      }
+      const payload = {
+        type: 'custom',
+        sizeId,
+        baseId,
+        sauceId,
+        cheeseId,
+        toppingIds: builderState.toppingIds || [],
+        quantity: 1,
+      };
 
-      addItemToCart({
-        name,
-        meta,
-        price: total,
-        qty: 1
-      });
-
+      await addItemToCart(payload);
       closeModal();
     });
   }
