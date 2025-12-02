@@ -33,7 +33,8 @@ router.get('/cart', (req, res) => {
 // GET /checkout – show checkout form
 router.get('/checkout', (req, res) => {
   res.render('checkout', {
-    title: 'Checkout'
+    title: 'Checkout',
+    errorMessage: null,
   });
 });
 

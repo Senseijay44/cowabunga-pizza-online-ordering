@@ -3,7 +3,7 @@
   <p>Almost there. Drop your details and we’ll handle the rest.</p>
 </section>
 
-<% if (errorMessage) { %>
+<% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
   <div class="alert alert-error">
     <p><%= errorMessage %></p>
   </div>
