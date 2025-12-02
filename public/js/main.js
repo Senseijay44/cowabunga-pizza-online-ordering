@@ -351,6 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
     toppingsTotal: 0
   };
 
+  let builderPricingError = null;
+
   function cacheBuilderControls() {
     sizeButtons = modal ? Array.from(modal.querySelectorAll('.js-size-option')) : [];
     crustSelect = modal ? modal.querySelector('.js-crust-select') : null;
@@ -497,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function updateBuilderPrice() {
-    if (!builderMenuConfig || !builderTotalEl) return;
+    if (!builderMenuConfig || !builderTotalEl) return true;
 
     const payload = {
       sizeId: builderState.sizeId,
@@ -524,9 +526,13 @@ document.addEventListener('DOMContentLoaded', () => {
       builderState.cheesePrice = pricing.breakdown?.cheese ?? builderState.cheesePrice;
       builderState.toppingsTotal = pricing.breakdown?.toppings ?? builderState.toppingsTotal;
       builderTotalEl.textContent = money(pricing.total || 0);
+      builderPricingError = null;
+      return true;
     } catch (err) {
       console.error('Builder price update failed:', err);
       recalcBuilderTotal();
+      builderPricingError = err?.message || 'Unable to calculate price.';
+      return false;
     }
   }
 
@@ -687,6 +693,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const baseId = builderState.baseId || builderMenuConfig?.rules?.defaultBaseId || builderMenuConfig?.bases?.[0]?.id;
       const sauceId = builderState.sauceId || builderMenuConfig?.rules?.defaultSauceId || builderMenuConfig?.sauces?.[0]?.id;
       const cheeseId = builderState.cheeseId || builderMenuConfig?.rules?.defaultCheeseId || builderMenuConfig?.cheeses?.[0]?.id;
+
+      const priceOk = await updateBuilderPrice();
+      if (!priceOk) {
+        showToast(builderPricingError || 'Unable to price this pizza.', 'error');
+        return;
+      }
 
       const payload = {
         type: 'custom',
