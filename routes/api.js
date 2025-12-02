@@ -263,6 +263,32 @@ router.get('/orders/:id/details', (req, res) => {
   return res.json(order);
 });
 
+// PATCH /api/orders/:id/status – admin-only status updates
+router.patch('/orders/:id/status', requireAdminApi, express.json(), (req, res) => {
+  const id = Number(req.params.id);
+  const { status } = req.body || {};
+
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid order id' });
+  }
+
+  if (!ALLOWED_STATUSES.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status value' });
+  }
+
+  const updated = updateOrderStatus(id, status);
+
+  if (!updated) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+
+  return res.json({
+    orderId: updated.id,
+    status: updated.status,
+    updatedAt: updated.updatedAt,
+  });
+});
+
 // ------------------------------------------------------
 // Cart (session-based)
 // ------------------------------------------------------
