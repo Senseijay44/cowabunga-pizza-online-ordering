@@ -131,36 +131,66 @@
       <button class="cb-modal-close" type="button" aria-label="Close">&times;</button>
     </header>
 
-    <div class="cb-modal-body">
+    <div class="cb-modal-body cb-builder-body">
       <!-- Size -->
-      <div class="cb-field-group">
-        <label class="cb-field-label">Size</label>
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Size</label>
+          <p class="cb-field-help">Choose your diameter</p>
+        </div>
         <div class="cb-pill-group js-size-options"></div>
       </div>
 
       <!-- Crust -->
-      <div class="cb-field-group">
-        <label class="cb-field-label">Crust</label>
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Crust</label>
+          <p class="cb-field-help">Select the base style</p>
+        </div>
         <select class="cb-select js-crust-select"></select>
       </div>
 
+      <!-- Sauce -->
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Sauce</label>
+          <p class="cb-field-help">Pick your flavor foundation</p>
+        </div>
+        <select class="cb-select js-sauce-select"></select>
+      </div>
+
+      <!-- Cheese -->
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Cheese</label>
+          <p class="cb-field-help">Choose the cheese layer</p>
+        </div>
+        <select class="cb-select js-cheese-select"></select>
+      </div>
+
       <!-- Toppings -->
-      <div class="cb-field-group">
-        <label class="cb-field-label">Toppings</label>
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Toppings</label>
+          <p class="cb-field-help">Add up to 10 toppings</p>
+        </div>
         <div class="cb-topping-grid js-topping-grid"></div>
       </div>
     </div>
 
     <footer class="cb-modal-footer">
       <div class="cb-modal-total">
-        Total: <span class="cb-price" id="cb-builder-total">$0.00</span>
+        <span class="cb-total-label">Total</span>
+        <span class="cb-price" id="cb-builder-total">$0.00</span>
       </div>
-      <button class="cb-btn cb-btn--outline cb-modal-cancel" type="button">
-        Cancel
-      </button>
-      <button class="cb-btn cb-btn--primary js-builder-add" type="button">
-        Add to Cart
-      </button>
+      <div class="cb-builder-actions">
+        <button class="cb-btn cb-btn--outline cb-modal-cancel" type="button">
+          Cancel
+        </button>
+        <button class="cb-btn cb-btn--primary js-builder-add" type="button">
+          Add to Cart
+        </button>
+      </div>
     </footer>
   </div>
 </div>
