@@ -1,4 +1,8 @@
 // utils/orderStore.js
+const fs = require('fs');
+const path = require('path');
+
+const orderFilePath = path.resolve(__dirname, '..', 'data', 'orders.json');
 
 let nextOrderId = 1;
 const orders = [];
@@ -10,6 +14,45 @@ const STATUS = {
   READY: 'Ready',
   COMPLETE: 'Complete',
 };
+
+function persistOrders() {
+  try {
+    fs.mkdirSync(path.dirname(orderFilePath), { recursive: true });
+    fs.writeFile(orderFilePath, JSON.stringify(orders, null, 2), 'utf8', (err) => {
+      if (err) {
+        console.error('Failed to save orders to disk:', err);
+      }
+    });
+  } catch (err) {
+    console.error('Failed to prepare order persistence:', err);
+  }
+}
+
+function loadOrdersFromDisk() {
+  try {
+    if (!fs.existsSync(orderFilePath)) {
+      return;
+    }
+
+    const contents = fs.readFileSync(orderFilePath, 'utf8');
+    if (!contents.trim()) {
+      return;
+    }
+
+    const savedOrders = JSON.parse(contents);
+    if (Array.isArray(savedOrders)) {
+      orders.push(...savedOrders);
+      const maxExistingId = orders.reduce((max, order) => {
+        return typeof order.id === 'number' && order.id > max ? order.id : max;
+      }, 0);
+      nextOrderId = Math.max(nextOrderId, maxExistingId + 1);
+    }
+  } catch (err) {
+    console.error('Failed to load orders from disk:', err);
+    orders.length = 0;
+    nextOrderId = 1;
+  }
+}
 
 /**
  * Create a new order and store it in memory.
@@ -34,6 +77,7 @@ function createOrder({ customer, items, totals, fulfillmentMethod = 'pickup' }) 
   };
 
   orders.push(order);
+  persistOrders();
   return order;
 }
 
@@ -69,8 +113,11 @@ function updateOrderStatus(id, newStatus) {
 
   order.status = newStatus;
   order.updatedAt = new Date().toISOString();
+  persistOrders();
   return order;
 }
+
+loadOrdersFromDisk();
 
 module.exports = {
   createOrder,
