@@ -809,3 +809,83 @@ a {
     min-width: 720px;
   }
 }
+
+/* =======================================================================================
+   ADMIN BUTTON REPAIR
+   ======================================================================================= */
+
+button,
+.btn-primary,
+.btn-secondary {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid rgba(249, 115, 22, 0.75);
+  background: linear-gradient(145deg, #0b1224, #0f172a);
+  color: #f8fafc;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease,
+    color 0.2s ease, border-color 0.2s ease;
+}
+
+button:hover,
+.btn-primary:hover,
+.btn-secondary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+  border-color: rgba(249, 115, 22, 0.95);
+}
+
+button:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.order-status-select:focus-visible {
+  outline: 2px solid rgba(249, 115, 22, 0.6);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #f97316, #ff4b3a);
+  color: #0b1120;
+  box-shadow: 0 14px 32px rgba(249, 115, 22, 0.35);
+}
+
+.btn-secondary {
+  background: linear-gradient(145deg, #0f172a, #0a0f1f);
+  color: #f8fafc;
+}
+
+button:disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.order-status-select {
+  appearance: none;
+  background: linear-gradient(145deg, #0b1224, #0f172a);
+  border: 1px solid rgba(249, 115, 22, 0.6);
+  border-radius: 999px;
+  color: #f8fafc;
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+  width: 100%;
+  max-width: 200px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.order-status-cell {
+  vertical-align: middle;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
