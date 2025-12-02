@@ -18,6 +18,7 @@
   "author": "Group 5",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.0",
     "ejs": "^3.1.10",
