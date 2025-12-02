@@ -1,17 +1,8 @@
 // utils/pizzaPricing.js
 
-const {
-  SIZES,
-  BASES,
-  SAUCES,
-  CHEESES,
-  TOPPINGS,
-  BUILDER_RULES,
-} = require('../config/menuConfig.js');
-const {
-  findMenuItemById,
-  findMenuItemOrDefault,
-} = require('./menuHelpers');
+const { BUILDER_RULES } = require('../config/menuConfig.js');
+const { getAvailableMenuConfig } = require('./menuConfigStore');
+const { findMenuItemById } = require('./menuHelpers');
 
 // --- Helpers --------------------------------------------------
 
@@ -29,15 +20,18 @@ function calculatePizzaPrice(pizzaState = {}) {
     quantity = 1,
   } = pizzaState;
 
-  const size = findMenuItemOrDefault(SIZES, sizeId, BUILDER_RULES.defaultSizeId);
-  const base = findMenuItemOrDefault(BASES, baseId, BUILDER_RULES.defaultBaseId);
-  const sauce = findMenuItemOrDefault(
-    SAUCES,
-    sauceId,
-    BUILDER_RULES.defaultSauceId
-  );
-  const cheese = findMenuItemOrDefault(
-    CHEESES,
+  const availableConfig = getAvailableMenuConfig();
+
+  const pickItem = (list, id, defaultId) =>
+    findMenuItemById(list, id) ||
+    findMenuItemById(list, defaultId) ||
+    (Array.isArray(list) ? list[0] : null);
+
+  const size = pickItem(availableConfig.sizes, sizeId, BUILDER_RULES.defaultSizeId);
+  const base = pickItem(availableConfig.bases, baseId, BUILDER_RULES.defaultBaseId);
+  const sauce = pickItem(availableConfig.sauces, sauceId, BUILDER_RULES.defaultSauceId);
+  const cheese = pickItem(
+    availableConfig.cheeses,
     cheeseId,
     BUILDER_RULES.defaultCheeseId
   );
@@ -57,7 +51,7 @@ function calculatePizzaPrice(pizzaState = {}) {
   const limitedToppings = toppings.slice(0, maxToppings);
 
   const toppingDetails = limitedToppings
-    .map((toppingId) => findMenuItemById(TOPPINGS, toppingId))
+    .map((toppingId) => findMenuItemById(availableConfig.toppings, toppingId))
     .filter(Boolean);
 
   const toppingsPrice = toppingDetails.reduce(

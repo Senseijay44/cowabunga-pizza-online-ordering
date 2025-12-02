@@ -148,8 +148,8 @@ router.post('/price', express.json(), (req, res) => {
     const pricing = calculatePizzaPrice(pizzaState);
     res.json(pricing);
   } catch (err) {
-    console.error('Price calculation error:', err);
-    res.status(400).json({ error: 'Invalid pizza configuration' });
+    console.error('Price calculation error:', err?.message || err, req.body);
+    res.status(400).json({ error: err?.message || 'Invalid pizza configuration' });
   }
 });
 
@@ -378,10 +378,16 @@ router.post('/cart/items', express.json(), (req, res) => {
         total,
       });
     } catch (err) {
-      console.error('Custom cart item error:', err);
-      return res
-        .status(500)
-        .json({ error: 'Failed to add custom pizza to cart' });
+      console.error('Custom cart item error:', err?.message || err, req.body);
+
+      const isConfigError =
+        err?.message && err.message.toLowerCase().includes('invalid pizza configuration');
+
+      return res.status(isConfigError ? 400 : 500).json({
+        error: isConfigError
+          ? err.message
+          : 'Failed to add custom pizza to cart',
+      });
     }
   }
 

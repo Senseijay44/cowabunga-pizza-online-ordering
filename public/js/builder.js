@@ -5,6 +5,8 @@ console.log("Pizza builder (full) script loaded");
 const PizzaBuilder = (function () {
   let menuConfig = null;
 
+  let lastPriceError = null;
+
   // Core state the backend expects
   let pizzaState = {
     type: "custom", // distinguish from preset items
@@ -411,6 +413,15 @@ const PizzaBuilder = (function () {
         updateStateFromForm();
         updatePreview();
 
+        const priceOk = await updatePriceFromServer();
+        if (!priceOk) {
+          showToast(
+            lastPriceError || "Unable to price this pizza. Please adjust your selections.",
+            "error"
+          );
+          return;
+        }
+
         console.log("Add to cart clicked with state:", pizzaState);
 
         try {
@@ -449,7 +460,10 @@ const PizzaBuilder = (function () {
   // ---------- Backend interaction -------------------------------------------
 
   async function updatePriceFromServer() {
-    if (!els.priceDisplay) return;
+    if (!els.priceDisplay) {
+      lastPriceError = null;
+      return true;
+    }
 
     try {
       const res = await fetch("/api/price", {
@@ -463,19 +477,24 @@ const PizzaBuilder = (function () {
       if (!res.ok) {
         const text = await res.text();
         console.error("Price API error:", res.status, text);
+        lastPriceError = text || "Invalid pizza configuration.";
         els.priceDisplay.textContent = "Error calculating price.";
-        return;
+        return false;
       }
 
       const data = await res.json();
       console.log("Pricing response:", data);
 
+      lastPriceError = null;
       els.priceDisplay.textContent = `$${data.total.toFixed(
         2
       )} (x${data.quantity})`;
+      return true;
     } catch (err) {
       console.error("Failed to update price from server:", err);
+      lastPriceError = err?.message || "Error calculating price.";
       els.priceDisplay.textContent = "Error calculating price.";
+      return false;
     }
   }
 
