@@ -50,6 +50,13 @@ app.use(
 // ------------------------------------------------------
 // MIDDLEWARE
 // ------------------------------------------------------
+app.use((req, res, next) => {
+  res.locals.isAdmin = Boolean(req.session && req.session.isAdmin);
+  res.locals.isAdminRoute = req.path.startsWith('/admin');
+  res.locals.currentPath = req.path;
+  next();
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
