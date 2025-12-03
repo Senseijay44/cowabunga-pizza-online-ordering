@@ -1,0 +1,205 @@
+<section class="page-header">
+  <h1>Admin · Menu</h1>
+  <p>Manage the menu configuration used by the builder and preset pizzas.</p>
+</section>
+
+<div class="admin-main">
+  <% if (message) { %>
+    <div class="alert alert-success"><%= message %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <% const isEditingPreset = editing && editing.section === 'preset'; %>
+  <section class="admin-card">
+    <div class="admin-section-header">
+      <div>
+        <p class="admin-section-kicker">Preset offerings</p>
+        <h2>Preset Pizzas</h2>
+        <p class="admin-section-description">Curated pies that surface directly in the customer-facing menu.</p>
+      </div>
+      <% if (isEditingPreset) { %>
+        <span class="admin-pill">Editing</span>
+      <% } %>
+    </div>
+
+    <form class="admin-form" action="/admin/menu/preset" method="POST">
+      <input type="hidden" name="id" value="<%= isEditingPreset ? editing.item.id : '' %>">
+      <div class="admin-form-grid admin-form-grid--pizzas">
+        <label class="admin-field">
+          <span class="admin-label">Name</span>
+          <input type="text" name="name" required value="<%= isEditingPreset ? editing.item.name : '' %>" placeholder="Cowabunga Classic">
+        </label>
+        <label class="admin-field">
+          <span class="admin-label">Description</span>
+          <input type="text" name="description" value="<%= isEditingPreset ? editing.item.description : '' %>" placeholder="Pepperoni, mozzarella...">
+        </label>
+        <label class="admin-field">
+          <span class="admin-label">Price</span>
+          <input type="number" name="price" min="0" step="0.01" required value="<%= isEditingPreset ? editing.item.price : '' %>" placeholder="14.99">
+        </label>
+        <label class="admin-field">
+          <span class="admin-label">Image URL</span>
+          <input
+            type="text"
+            name="imageUrl"
+            value="<%= isEditingPreset ? (editing.item.imageUrl || '') : '' %>"
+            placeholder="/images/pizza-classic.png"
+          >
+        </label>
+        <label class="admin-field">
+          <span class="admin-label">Category</span>
+          <select name="category" required>
+            <option value="">Select category</option>
+            <% (menuCategories || []).forEach((cat) => { %>
+              <option
+                value="<%= cat %>"
+                <%= (isEditingPreset && editing.item.category === cat) || (!isEditingPreset && cat === 'pizza') ? 'selected' : '' %>
+              >
+                <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+              </option>
+            <% }); %>
+          </select>
+        </label>
+        <label class="admin-field admin-field--checkbox">
+          <input
+            type="checkbox"
+            name="isAvailable"
+            <%= !editing || editing.section !== 'preset' || editing.item.isAvailable !== false ? 'checked' : '' %>
+          >
+          <span class="admin-label">Available</span>
+        </label>
+      </div>
+      <div class="admin-form-actions">
+        <button type="submit" class="cb-btn cb-btn--primary"><%= isEditingPreset ? 'Update Pizza' : 'Save Pizza' %></button>
+        <% if (isEditingPreset) { %>
+          <a class="cb-btn cb-btn--outline" href="/admin/menu">Cancel</a>
+        <% } %>
+      </div>
+    </form>
+
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Available</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!presetPizzas || !presetPizzas.length) { %>
+            <tr><td colspan="7">No preset pizzas yet.</td></tr>
+          <% } else { %>
+            <% presetPizzas.forEach((item) => { %>
+              <tr>
+                <td class="admin-thumb">
+                  <% if (item.imageUrl) { %>
+                    <img src="<%= item.imageUrl %>" alt="<%= item.name %>" class="admin-thumb-img">
+                  <% } else { %>
+                    <span class="muted">—</span>
+                  <% } %>
+                </td>
+                <td><strong><%= item.name %></strong></td>
+                <td><%= item.category || '—' %></td>
+                <td><%= item.description %></td>
+                <td>$<%= Number(item.price).toFixed(2) %></td>
+                <td><%= item.isAvailable !== false ? 'Yes' : 'No' %></td>
+                <td class="admin-actions">
+                  <a class="cb-btn cb-btn--sm cb-btn--outline" href="/admin/menu?editSection=preset&editId=<%= item.id %>">Edit</a>
+                  <form action="/admin/menu/preset/<%= item.id %>/delete" method="POST" class="inline-form" onsubmit="return confirm('Delete this preset pizza?');">
+                    <button type="submit" class="cb-btn cb-btn--sm cb-btn--danger">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <% const configSections = [
+    { key: 'sizes', title: 'Sizes', priceLabel: 'Price Modifier', placeholder: '1.0', action: 'Size' },
+    { key: 'bases', title: 'Bases / Crusts', priceLabel: 'Base Price', placeholder: '8.00', action: 'Base' },
+    { key: 'sauces', title: 'Sauces', priceLabel: 'Price', placeholder: '0.75', action: 'Sauce' },
+    { key: 'cheeses', title: 'Cheeses', priceLabel: 'Price', placeholder: '0.00', action: 'Cheese' },
+    { key: 'toppings', title: 'Toppings', priceLabel: 'Price', placeholder: '1.25', action: 'Topping' },
+  ]; %>
+
+  <% configSections.forEach((section) => { const items = menuConfig[section.key] || []; const isEditingSection = editing && editing.section === section.key; %>
+    <section class="admin-card">
+      <div class="admin-section-header">
+        <div>
+          <h2><%= section.title %></h2>
+          <p class="admin-section-description">Set pricing and availability for <%= section.title.toLowerCase() %>.</p>
+        </div>
+        <% if (isEditingSection) { %>
+          <span class="admin-pill">Editing</span>
+        <% } %>
+      </div>
+
+      <form class="admin-form" action="/admin/menu/<%= section.key %>" method="POST">
+        <input type="hidden" name="id" value="<%= isEditingSection ? editing.item.id : '' %>">
+        <div class="admin-form-grid admin-form-grid--compact">
+          <label class="admin-field">
+            <span class="admin-label">Name</span>
+            <input type="text" name="name" required value="<%= isEditingSection ? editing.item.name : '' %>" placeholder="Name">
+          </label>
+          <label class="admin-field">
+            <span class="admin-label"><%= section.priceLabel %></span>
+            <input type="number" name="price" step="0.01" value="<%= isEditingSection ? (editing.item.priceModifier ?? editing.item.basePrice ?? editing.item.price ?? '') : '' %>" placeholder="<%= section.placeholder %>">
+          </label>
+          <label class="admin-field admin-field--checkbox">
+            <input type="checkbox" name="isAvailable" <%= !editing || editing.section !== section.key || editing.item.isAvailable !== false ? 'checked' : '' %>>
+            <span class="admin-label">Available</span>
+          </label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="cb-btn cb-btn--primary"><%= isEditingSection ? 'Update' : 'Save' %> <%= section.action %></button>
+          <% if (isEditingSection) { %>
+            <a class="cb-btn cb-btn--outline" href="/admin/menu">Cancel</a>
+          <% } %>
+        </div>
+      </form>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th><%= section.priceLabel %></th>
+              <th>Available</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!items.length) { %>
+              <tr><td colspan="4">No items configured.</td></tr>
+            <% } else { %>
+              <% items.forEach((item) => { %>
+                <% const priceVal = item.priceModifier ?? item.basePrice ?? item.price; %>
+                <tr>
+                  <td><strong><%= item.name %></strong></td>
+                  <td><%= priceVal !== undefined ? priceVal : '—' %></td>
+                  <td><%= item.isAvailable !== false ? 'Yes' : 'No' %></td>
+                  <td class="admin-actions">
+                    <a class="cb-btn cb-btn--sm cb-btn--outline" href="/admin/menu?editSection=<%= section.key %>&editId=<%= item.id %>">Edit</a>
+                    <form action="/admin/menu/<%= section.key %>/<%= item.id %>/delete" method="POST" class="inline-form" onsubmit="return confirm('Delete this item?');">
+                      <button type="submit" class="cb-btn cb-btn--sm cb-btn--danger">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% }); %>
+</div>

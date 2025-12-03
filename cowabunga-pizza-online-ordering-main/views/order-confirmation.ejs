@@ -1,0 +1,45 @@
+<section class="page-header">
+  <h1>Order Confirmed</h1>
+  <p>Thanks, <%= order.customer.name %>! Your pizza journey begins now.</p>
+</section>
+
+<section class="confirmation-card">
+  <div class="confirmation-details">
+    <h2>Order Details</h2>
+
+    <p><strong>Order ID:</strong> <%= order.id %></p>
+    <p><strong>Status:</strong> <%= order.status %></p>
+
+    <h3>Customer</h3>
+    <p><strong>Name:</strong> <%= order.customer.name %></p>
+    <p><strong>Phone:</strong> <%= order.customer.phone %></p>
+    <p><strong>Address:</strong> <%= order.customer.address %></p>
+
+    <% if (order.items && order.items.length > 0) { %>
+      <h3>Items</h3>
+      <ul class="confirmation-items">
+        <% order.items.forEach(item => { %>
+          <li>
+            <span class="item-name"><%= item.name %></span>
+            <% if (item.meta) { %>
+              <span class="item-meta"><%= item.meta %></span>
+            <% } %>
+            <span class="item-qty">x <%= item.qty %></span>
+            <span class="item-price">$<%= (item.price * item.qty).toFixed(2) %></span>
+          </li>
+        <% }) %>
+      </ul>
+
+      <h3>Totals</h3>
+      <p>Subtotal: $<%= order.totals.subtotal.toFixed(2) %></p>
+      <p>Tax: $<%= order.totals.tax.toFixed(2) %></p>
+      <p><strong>Total:</strong> $<%= order.totals.total.toFixed(2) %></strong></p>
+    <% } else { %>
+      <p>No items were attached to this order (dev mode).</p>
+    <% } %>
+  </div>
+
+  <div class="confirmation-actions">
+    <a href="/menu" class="btn-secondary">Back to Menu</a>
+  </div>
+</section>
