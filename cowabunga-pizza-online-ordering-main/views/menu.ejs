@@ -1,0 +1,196 @@
+<section class="cb-page-header">
+  <h1>Menu</h1>
+  <p>Build your legend one slice at a time.</p>
+</section>
+
+<div class="cb-main">
+  <!-- ===== LEFT: MENU ===== -->
+  <section class="cb-menu-section">
+    <!-- Order Mode / Info Bar -->
+    <div class="cb-order-bar">
+      <div class="cb-order-mode">
+        <button class="cb-pill cb-pill--active js-order-mode" type="button" data-mode="pickup">Pickup</button>
+        <button class="cb-pill js-order-mode" type="button" data-mode="delivery">Delivery</button>
+      </div>
+      <div class="cb-order-info">
+        <span>Estimated time: 25–35 mins</span>
+      </div>
+    </div>
+
+    <!-- Category Filter (static for now) -->
+    <div class="cb-category-bar">
+      <button class="cb-chip cb-chip--active js-category-chip" type="button" data-filter="all">All</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="pizza">Specialty Pizzas</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="build">Build Your Own</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="side">Sides</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="drink">Drinks</button>
+      <button class="cb-chip js-category-chip" type="button" data-filter="dessert">Desserts</button>
+    </div>
+
+    <!-- Menu Grid -->
+    <div class="cb-menu-grid">
+      <% const pizzaImages = ['/images/pizza-1.png', '/images/pizza-2.png', '/images/pizza-3.png']; %>
+
+      <% menuItems.forEach((item, idx) => { %>
+        <article class="cb-card" data-category="<%= item.category || 'pizza' %>">
+          <img
+            src="<%= item.imageUrl || pizzaImages[idx % pizzaImages.length] %>"
+            alt="<%= item.name %>"
+            class="cb-card-img"
+          />
+          <div class="cb-card-body">
+            <h3 class="cb-card-title"><%= item.name %></h3>
+            <p class="cb-card-desc"><%= item.description %></p>
+            <div class="cb-card-footer">
+              <span class="cb-price">$<%= item.price.toFixed(2) %></span>
+              <div class="cb-card-actions">
+                <button
+                  class="cb-btn cb-btn--outline cb-btn--sm js-open-builder"
+                  type="button"
+                >
+                  Customize
+                </button>
+                <button
+                  class="cb-btn cb-btn--primary cb-btn--sm js-add-menu-item"
+                  type="button"
+                  data-id="<%= item.id %>"
+                  data-name="<%= item.name %>"
+                  data-price="<%= item.price.toFixed(2) %>"
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+
+      <!-- Build Your Own highlight -->
+      <article class="cb-card cb-card--highlight" data-category="build">
+        <div class="cb-card-body">
+          <h3 class="cb-card-title">Build Your Own Pizza</h3>
+          <p class="cb-card-desc">
+            Choose your size, crust, sauce, and toppings with real-time price updates.
+          </p>
+          <div class="cb-card-footer">
+            <span class="cb-price">From $9.99</span>
+            <button class="cb-btn cb-btn--primary js-open-builder" type="button">
+              Start Customizing
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== RIGHT: CART SIDEBAR ===== -->
+  <aside class="cb-cart" id="cart-panel">
+    <header class="cb-cart-header">
+      <h2>Your Order</h2>
+      <span class="cb-cart-count" id="cb-cart-count">0 items</span>
+    </header>
+
+    <ul class="cb-cart-list" id="cb-cart-items">
+      <!-- Cart items injected by main.js -->
+    </ul>
+
+    <div class="cb-cart-summary">
+      <div class="cb-cart-row">
+        <span>Subtotal</span>
+        <span id="cb-cart-subtotal">$0.00</span>
+      </div>
+      <div class="cb-cart-row">
+        <span>Tax (est.)</span>
+        <span id="cb-cart-tax">$0.00</span>
+      </div>
+      <div class="cb-cart-row cb-cart-row--total">
+        <span>Total</span>
+        <span id="cb-cart-total">$0.00</span>
+      </div>
+
+      <a href="/checkout" class="cb-btn cb-btn--primary cb-btn--full cb-cart-checkout-btn">
+        Proceed to Checkout
+      </a>
+    </div>
+  </aside>
+</div>
+
+<!-- ===== MOBILE CART SUMMARY BAR ===== -->
+<button class="cb-cart-bar" type="button" id="cb-cart-bar" aria-expanded="false">
+  <span id="cb-cart-bar-label">Cart: 0 items</span>
+  <span id="cb-cart-bar-total">$0.00 ▴</span>
+</button>
+<div class="cb-cart-backdrop" id="cb-cart-backdrop" aria-hidden="true"></div>
+
+<!-- ===== PIZZA BUILDER MODAL (quick builder) ===== -->
+<div class="cb-modal" id="cb-builder-modal" aria-hidden="true">
+  <div class="cb-modal-backdrop"></div>
+  <div class="cb-modal-dialog" role="dialog" aria-modal="true">
+    <header class="cb-modal-header">
+      <h2>Build Your Pizza</h2>
+      <button class="cb-modal-close" type="button" aria-label="Close">&times;</button>
+    </header>
+
+    <div class="cb-modal-body cb-builder-body">
+      <!-- Size -->
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Size</label>
+          <p class="cb-field-help">Choose your diameter</p>
+        </div>
+        <div class="cb-pill-group js-size-options"></div>
+      </div>
+
+      <!-- Crust -->
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Crust</label>
+          <p class="cb-field-help">Select the base style</p>
+        </div>
+        <select class="cb-select js-crust-select"></select>
+      </div>
+
+      <!-- Sauce -->
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Sauce</label>
+          <p class="cb-field-help">Pick your flavor foundation</p>
+        </div>
+        <select class="cb-select js-sauce-select"></select>
+      </div>
+
+      <!-- Cheese -->
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Cheese</label>
+          <p class="cb-field-help">Choose the cheese layer</p>
+        </div>
+        <select class="cb-select js-cheese-select"></select>
+      </div>
+
+      <!-- Toppings -->
+      <div class="cb-builder-section">
+        <div class="cb-section-header">
+          <label class="cb-field-label">Toppings</label>
+          <p class="cb-field-help">Add up to 10 toppings</p>
+        </div>
+        <div class="cb-topping-grid js-topping-grid"></div>
+      </div>
+    </div>
+
+    <footer class="cb-modal-footer">
+      <div class="cb-modal-total">
+        <span class="cb-total-label">Total</span>
+        <span class="cb-price" id="cb-builder-total">$0.00</span>
+      </div>
+      <div class="cb-builder-actions">
+        <button class="cb-btn cb-btn--outline cb-modal-cancel" type="button">
+          Cancel
+        </button>
+        <button class="cb-btn cb-btn--primary js-builder-add" type="button">
+          Add to Cart
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>

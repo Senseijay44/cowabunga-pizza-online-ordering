@@ -1,0 +1,22 @@
+[
+  {
+    "id": "sm",
+    "name": "Small",
+    "priceDelta": 0
+  },
+  {
+    "id": "md",
+    "name": "Medium",
+    "priceDelta": 2
+  },
+  {
+    "id": "lg",
+    "name": "Large",
+    "priceDelta": 4
+  },
+  {
+    "id": "xl",
+    "name": "XL",
+    "priceDelta": 6
+  }
+]
