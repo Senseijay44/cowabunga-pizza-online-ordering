@@ -30,4 +30,34 @@ describe('API: Cart endpoints', () => {
     expect(cartRes.statusCode).toBe(200);
     expect(cartRes.body.items.length).toBeGreaterThan(0);
   });
+
+  test('PATCH /api/cart/items/:id with qty 0 removes the item', async () => {
+    const agent = request.agent(app);
+
+    const addRes = await agent.post('/api/cart/items').send({
+      name: 'Temporary Pizza',
+      price: 9.99,
+      qty: 1,
+    });
+
+    const itemId = addRes.body.item.id;
+
+    const updateRes = await agent
+      .patch(`/api/cart/items/${itemId}`)
+      .send({ qty: 0 });
+
+    expect(updateRes.statusCode).toBe(200);
+    expect(updateRes.body.cart).toHaveLength(0);
+    expect(updateRes.body.total).toBe(0);
+  });
+
+  test('POST /api/cart/items rejects custom pizzas with invalid quantity', async () => {
+    const res = await request(app).post('/api/cart/items').send({
+      type: 'custom',
+      quantity: -2,
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
 });
