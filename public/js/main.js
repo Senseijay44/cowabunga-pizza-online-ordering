@@ -1,5 +1,7 @@
 console.log('Cowabunga Pizza client script loaded with cart + builder.');
 
+const TAX_RATE = 0.089;
+
 // -------------------------------------------------------------
 //  TOAST SYSTEM  (inline, self-contained)
 // -------------------------------------------------------------
@@ -52,8 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const cartPanel = document.getElementById('cart-panel');
   const cartItemsEl = document.getElementById('cb-cart-items');
   const cartCountEl = document.getElementById('cb-cart-count');
-  const cartSubtotalEl = document.getElementById('cb-cart-subtotal');
-  const cartTotalEl = document.getElementById('cb-cart-total');
+  const cartSubtotalEl =
+    document.querySelector('[data-cart-subtotal]') || document.getElementById('cb-cart-subtotal');
+  const cartTaxEl = document.querySelector('[data-cart-tax]') || document.getElementById('cb-cart-tax');
+  const cartTotalEl =
+    document.querySelector('[data-cart-total]') || document.getElementById('cb-cart-total');
   const cartBar = document.getElementById('cb-cart-bar');
   const cartBarLabelEl = document.getElementById('cb-cart-bar-label');
   const cartBarTotalEl = document.getElementById('cb-cart-bar-total');
@@ -133,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   // CART STATE
   // -------------------------------------------------------------
-  const TAX_RATE = 0.086;
   const cart = [];
 
   function money(n) {
@@ -147,8 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
       itemCount += item.qty;
       subtotal += item.price * item.qty;
     });
-    const total = subtotal * (1 + TAX_RATE);
-    return { itemCount, subtotal, total };
+    const estimatedTax = subtotal * TAX_RATE;
+    const total = subtotal + estimatedTax;
+    return { itemCount, subtotal, estimatedTax, total };
   }
 
   function isCartDrawerOpen() {
@@ -166,12 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateCartSummaryUI() {
-    const { itemCount, subtotal, total } = computeCartTotals();
+    const { itemCount, subtotal, estimatedTax, total } = computeCartTotals();
 
     if (cartCountEl) {
       cartCountEl.textContent = itemCount === 1 ? '1 item' : `${itemCount} items`;
     }
     if (cartSubtotalEl) cartSubtotalEl.textContent = money(subtotal);
+    if (cartTaxEl) cartTaxEl.textContent = money(estimatedTax);
     if (cartTotalEl) cartTotalEl.textContent = money(total);
 
     if (cartBarLabelEl) {
