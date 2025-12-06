@@ -1,23 +1,22 @@
-<!-- Order confirmation view: shown after the simulated payment completes -->
+<!-- Payment placeholder view: simulate a real provider before confirmation -->
 <section class="page-header">
-  <h1>Thanks for your order!</h1>
-  <p>We are getting things ready for <%= order.customer.name %>.</p>
+  <h1>Payment</h1>
+  <p>This is a placeholder screen before handing off to a secure payment provider.</p>
 </section>
 
 <section class="confirmation-card">
   <div class="confirmation-details">
-    <h2>Order Details</h2>
+    <h2>Order Overview</h2>
 
     <p><strong>Order ID:</strong> <%= order.id %></p>
-    <p><strong>Status:</strong> <%= order.status %></p>
+    <p><strong>Customer:</strong> <%= order.customer.name %></p>
+    <p><strong>Phone:</strong> <%= order.customer.phone %></p>
     <p><strong>Fulfillment:</strong> <%= order.fulfillmentMethod === 'delivery' ? 'Delivery' : 'Pickup' %></p>
 
-    <h3>Customer</h3>
-    <p><strong>Name:</strong> <%= order.customer.name %></p>
-    <p><strong>Phone:</strong> <%= order.customer.phone %></p>
     <% if (order.customer.email) { %>
       <p><strong>Email:</strong> <%= order.customer.email %></p>
     <% } %>
+
     <% if (order.customer.address) { %>
       <p><strong>Address:</strong> <%= order.customer.address %></p>
     <% } %>
@@ -36,17 +35,26 @@
           </li>
         <% }) %>
       </ul>
+    <% } %>
 
+    <% if (order.totals) { %>
       <h3>Totals</h3>
-      <p>Subtotal: $<%= order.totals.subtotal.toFixed(2) %></p>
-      <p>Tax: $<%= order.totals.tax.toFixed(2) %></p>
-      <p><strong>Total:</strong> $<%= order.totals.total.toFixed(2) %></strong></p>
-    <% } else { %>
-      <p>No items were attached to this order (dev mode).</p>
+      <p>Subtotal: $<%= Number(order.totals.subtotal || 0).toFixed(2) %></p>
+      <p>Tax: $<%= Number(order.totals.tax || 0).toFixed(2) %></p>
+      <p><strong>Total:</strong> $<%= Number(order.totals.total || 0).toFixed(2) %></strong></p>
     <% } %>
   </div>
 
   <div class="confirmation-actions">
-    <a href="/menu" class="btn-secondary">Back to Menu</a>
+    <div class="alert alert-info">
+      <p>
+        In a real deployment, this step would redirect to a secure payment provider like Stripe.
+        For this project, click "Complete Payment" to simulate a successful payment.
+      </p>
+    </div>
+
+    <form action="/payment/<%= order.id %>/complete" method="POST" class="form">
+      <button type="submit" class="btn-primary btn-full">Complete Payment</button>
+    </form>
   </div>
 </section>

@@ -30,7 +30,7 @@ router.get('/cart', (req, res) => {
   res.redirect('/menu#cart-panel');
 });
 
-// GET /checkout – show checkout form
+// GET /checkout - show checkout form
 router.get('/checkout', (req, res) => {
   res.render('checkout', {
     title: 'Checkout',
@@ -38,7 +38,7 @@ router.get('/checkout', (req, res) => {
   });
 });
 
-// POST /checkout – handle form submit and redirect to confirmation
+// POST /checkout - handle form submit and redirect to payment placeholder
 router.post('/checkout', (req, res) => {
   try {
     const { name, phone, address, email, fulfillmentMethod } = req.body;
@@ -68,14 +68,39 @@ router.post('/checkout', (req, res) => {
       req.session.cart = [];
     }
 
-    res.redirect(`/order-confirmation/${created.id}`);
+    res.redirect(`/payment/${created.id}`);
   } catch (err) {
     console.error('Checkout form error:', err);
     res.status(500).send('Something went wrong with checkout.');
   }
 });
 
-// GET /order-confirmation/:id – confirmation screen
+// GET /payment/:id - placeholder payment page to simulate a real provider
+router.get('/payment/:id', (req, res) => {
+  const order = getOrderById(req.params.id);
+
+  if (!order) {
+    return res.status(404).render('404', { title: 'Order Not Found' });
+  }
+
+  res.render('payment-placeholder', {
+    title: 'Payment',
+    order,
+  });
+});
+
+// POST /payment/:id/complete - simulate payment success and move to confirmation
+router.post('/payment/:id/complete', (req, res) => {
+  const order = getOrderById(req.params.id);
+
+  if (!order) {
+    return res.status(404).render('404', { title: 'Order Not Found' });
+  }
+
+  res.redirect(`/order-confirmation/${order.id}`);
+});
+
+// GET /order-confirmation/:id - confirmation screen
 router.get('/order-confirmation/:id', (req, res) => {
   const order = getOrderById(req.params.id);
 
