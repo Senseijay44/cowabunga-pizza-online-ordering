@@ -641,7 +641,18 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.setAttribute('aria-hidden', 'true');
   }
 
-  openButtons.forEach(btn => btn.addEventListener('click', openModal));
+  const isPizzaBuilderButton = (btn) =>
+    (btn?.dataset?.itemType || '').toLowerCase() === 'pizza';
+
+  openButtons.forEach(btn => {
+    btn.addEventListener('click', event => {
+      const target = event.currentTarget;
+      if (!isPizzaBuilderButton(target)) {
+        return;
+      }
+      openModal();
+    });
+  });
   closeButtons.forEach(btn => btn.addEventListener('click', closeModal));
   if (backdrop) backdrop.addEventListener('click', closeModal);
 

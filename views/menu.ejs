@@ -32,7 +32,8 @@
       <% const pizzaImages = ['/images/pizza-1.png', '/images/pizza-2.png', '/images/pizza-3.png']; %>
 
       <% menuItems.forEach((item, idx) => { %>
-        <article class="cb-card" data-category="<%= item.category || 'pizza' %>">
+        <% const itemCategory = (item.category || 'pizza').toLowerCase(); %>
+        <article class="cb-card" data-category="<%= itemCategory %>">
           <img
             src="<%= item.imageUrl || pizzaImages[idx % pizzaImages.length] %>"
             alt="<%= item.name %>"
@@ -44,12 +45,15 @@
             <div class="cb-card-footer">
               <span class="cb-price">$<%= item.price.toFixed(2) %></span>
               <div class="cb-card-actions">
-                <button
-                  class="cb-btn cb-btn--outline cb-btn--sm js-open-builder"
-                  type="button"
-                >
-                  Customize
-                </button>
+                <% if (itemCategory === 'pizza') { %>
+                  <button
+                    class="cb-btn cb-btn--outline cb-btn--sm js-open-builder"
+                    type="button"
+                    data-item-type="pizza"
+                  >
+                    Customize
+                  </button>
+                <% } %>
                 <button
                   class="cb-btn cb-btn--primary cb-btn--sm js-add-menu-item"
                   type="button"
@@ -74,7 +78,7 @@
           </p>
           <div class="cb-card-footer">
             <span class="cb-price">From $9.99</span>
-            <button class="cb-btn cb-btn--primary js-open-builder" type="button">
+            <button class="cb-btn cb-btn--primary js-open-builder" type="button" data-item-type="pizza">
               Start Customizing
             </button>
           </div>
