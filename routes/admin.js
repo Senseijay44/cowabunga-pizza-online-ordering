@@ -42,7 +42,7 @@ const renderMenuPage = (req, res, extras = {}) => {
   const presetPizzas = getMenuItems();
 
   res.render('admin-menu', {
-    title: 'Admin · Menu',
+    title: 'Admin Menu',
     message: extras.message || req.query.message || null,
     error: extras.error || req.query.error || null,
     presetPizzas,
@@ -52,7 +52,7 @@ const renderMenuPage = (req, res, extras = {}) => {
   });
 };
 
-// GET /admin/login – show login form
+// GET /admin/login — show login form
 router.get('/login', (req, res) => {
   if (req.session && req.session.isAdmin) {
     return res.redirect('/admin/orders');
@@ -70,7 +70,7 @@ router.get('/login', (req, res) => {
   });
 });
 
-// POST /admin/login – handle login submit
+// POST /admin/login — handle login submit
 router.post('/login', async (req, res) => {
   if (!isAdminConfigured) {
     return res.status(503).render('admin-login', {
@@ -115,7 +115,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // 🔐 Regenerate session ID on successful login
+    // Regenerate session ID on successful login
     req.session.regenerate((err) => {
       if (err) {
         console.error('Session regenerate error:', err);
@@ -143,8 +143,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
-// GET /admin/logout – clear session
+// GET /admin/logout — clear session
 router.get('/logout', (req, res) => {
   req.session.isAdmin = false;
   req.session.adminUser = null;
@@ -153,14 +152,51 @@ router.get('/logout', (req, res) => {
   });
 });
 
-// GET /admin/orders – protected admin orders page
+// GET /admin/orders — protected admin orders page
 router.get('/orders', requireAdmin, (req, res) => {
   const orders = getAllOrders();
 
   res.render('admin-orders', {
-    title: 'Admin · Orders',
+    title: 'Admin Orders',
     orders,
     STATUS,
+  });
+});
+
+router.get('/reports', requireAdmin, (req, res) => {
+  const orders = getAllOrders();
+  const summaries = orders.map((order) => {
+    const itemCount =
+      order.itemCount ||
+      (Array.isArray(order.items)
+        ? order.items.reduce((sum, item) => sum + Number(item.qty || 0), 0)
+        : 0);
+
+    return {
+      id: order.id,
+      total: Number(order.totals?.total || 0),
+      itemCount,
+      createdAt: order.createdAt,
+    };
+  });
+
+  const totals = summaries.reduce(
+    (acc, item) => {
+      acc.revenue += item.total;
+      acc.items += item.itemCount;
+      return acc;
+    },
+    { revenue: 0, items: 0 }
+  );
+
+  res.render('admin-reports', {
+    title: 'Admin Reports',
+    orders: summaries,
+    summary: {
+      revenue: totals.revenue,
+      orders: summaries.length,
+      items: totals.items,
+    },
   });
 });
 
@@ -258,7 +294,7 @@ router.post('/menu/:category/:id/delete', requireAdmin, (req, res) => {
   return res.redirect(buildRedirect({ message: `${label} deleted.` }));
 });
 
-// GET /admin/menu – manage preset menu items
+// GET /admin/menu — manage preset menu items
 router.get('/menu', requireAdmin, (req, res) => {
   const { editSection, editId } = req.query || {};
 

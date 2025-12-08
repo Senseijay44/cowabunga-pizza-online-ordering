@@ -17,6 +17,7 @@ const {
 const {
   createOrder,
   getOrderById,
+  getAllOrders,
   updateOrderStatus,
   STATUS,
 } = require('../utils/orderStore');
@@ -172,7 +173,15 @@ router.post('/checkout', express.json(), (req, res) => {
       return res.status(400).json({ error });
     }
 
-    const created = createOrder(order);
+    const itemCount = Array.isArray(order.items)
+      ? order.items.reduce((sum, item) => sum + Number(item.qty || 0), 0)
+      : 0;
+
+    const created = createOrder({ ...order, itemCount });
+
+    if (req.session) {
+      req.session.cart = [];
+    }
 
     return res.status(201).json({
       message: 'Order created',
@@ -247,6 +256,62 @@ router.patch('/orders/:id/status', requireAdminApi, express.json(), (req, res) =
     status: updated.status,
     updatedAt: updated.updatedAt,
   });
+});
+
+// ------------------------------------------------------
+// Admin reporting
+// ------------------------------------------------------
+
+const toCsvValue = (value) => {
+  if (value === null || value === undefined) return '';
+  const str = String(value).replace(/"/g, '""');
+  return /[",\n]/.test(str) ? `"${str}"` : str;
+};
+
+router.get('/admin/report', requireAdminApi, (req, res) => {
+  try {
+    const orders = getAllOrders();
+    const rows = orders.map((order) => {
+      const itemCount =
+        order.itemCount ||
+        (Array.isArray(order.items)
+          ? order.items.reduce((sum, item) => sum + Number(item.qty || 0), 0)
+          : 0);
+
+      return {
+        orderId: order.id,
+        subtotal: Number(order.totals?.subtotal || 0).toFixed(2),
+        tax: Number(order.totals?.tax || 0).toFixed(2),
+        total: Number(order.totals?.total || 0).toFixed(2),
+        itemCount,
+        createdAt: order.createdAt,
+      };
+    });
+
+    const header = ['orderId', 'subtotal', 'tax', 'total', 'itemCount', 'createdAt'];
+    const csvLines = [header.map(toCsvValue).join(',')];
+    rows.forEach((row) => {
+      csvLines.push(
+        [
+          row.orderId,
+          row.subtotal,
+          row.tax,
+          row.total,
+          row.itemCount,
+          row.createdAt,
+        ]
+          .map(toCsvValue)
+          .join(',')
+      );
+    });
+
+    res.set('Content-Type', 'text/csv');
+    res.set('Content-Disposition', 'attachment; filename="orders-report.csv"');
+    return res.send(csvLines.join('\n'));
+  } catch (err) {
+    console.error('Failed to generate CSV report:', err);
+    return res.status(500).json({ error: 'Unable to generate report' });
+  }
 });
 
 // ------------------------------------------------------

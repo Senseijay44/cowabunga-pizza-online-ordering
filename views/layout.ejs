@@ -19,13 +19,14 @@
     <% if (isAdmin && isAdminRoute && currentPath !== '/admin/login') { %>
       <nav class="admin-nav">
         <div class="admin-nav-row">
-          <div class="admin-nav-links">
-            <a href="/admin/orders" class="<%= currentPath.startsWith('/admin/orders') ? 'active' : '' %>">Orders</a>
-            <a href="/admin/menu" class="<%= currentPath.startsWith('/admin/menu') ? 'active' : '' %>">Menu</a>
-          </div>
-          <div class="admin-nav-links admin-nav-links--right">
-            <a href="/admin/logout">Logout</a>
-          </div>
+        <div class="admin-nav-links">
+          <a href="/admin/orders" class="<%= currentPath.startsWith('/admin/orders') ? 'active' : '' %>">Orders</a>
+          <a href="/admin/reports" class="<%= currentPath.startsWith('/admin/reports') ? 'active' : '' %>">Reports</a>
+          <a href="/admin/menu" class="<%= currentPath.startsWith('/admin/menu') ? 'active' : '' %>">Menu</a>
+        </div>
+        <div class="admin-nav-links admin-nav-links--right">
+          <a href="/admin/logout">Logout</a>
+        </div>
         </div>
       </nav>
     <% } %>

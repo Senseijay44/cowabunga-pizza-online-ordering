@@ -1,0 +1,71 @@
+<section class="page-header">
+  <h1>Admin Reports</h1>
+  <p>Recent orders and exports backed by SQLite.</p>
+</section>
+
+<div class="admin-main">
+  <section class="admin-card">
+    <div class="admin-section-header">
+      <div>
+        <h2>Order Summary</h2>
+        <p class="admin-section-description">High level totals from the orders table.</p>
+      </div>
+      <div class="admin-nav-links admin-nav-links--right">
+        <a class="cb-btn cb-btn--outline" href="/api/admin/report">Download CSV</a>
+      </div>
+    </div>
+
+    <div class="admin-stats">
+      <div class="admin-stat">
+        <p class="admin-stat-label">Total Revenue</p>
+        <p class="admin-stat-value">$<%= Number(summary?.revenue || 0).toFixed(2) %></p>
+      </div>
+      <div class="admin-stat">
+        <p class="admin-stat-label">Orders</p>
+        <p class="admin-stat-value"><%= summary?.orders || 0 %></p>
+      </div>
+      <div class="admin-stat">
+        <p class="admin-stat-label">Items Sold</p>
+        <p class="admin-stat-value"><%= summary?.items || 0 %></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="admin-card">
+    <div class="admin-section-header">
+      <div>
+        <h2>Recent Orders</h2>
+        <p class="admin-section-description">Newest orders first. Times shown in local server time.</p>
+      </div>
+    </div>
+
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Total</th>
+            <th>Items</th>
+            <th>Placed At</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!orders || orders.length === 0) { %>
+            <tr>
+              <td colspan="4">No orders yet.</td>
+            </tr>
+          <% } else { %>
+            <% orders.forEach((order) => { %>
+              <tr>
+                <td>#<%= order.id %></td>
+                <td>$<%= Number(order.total || 0).toFixed(2) %></td>
+                <td><%= order.itemCount || 0 %></td>
+                <td><%= order.createdAt ? new Date(order.createdAt).toLocaleString() : '—' %></td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

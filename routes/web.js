@@ -5,11 +5,11 @@ const router = express.Router();
 const { getOrderById, createOrder } = require('../utils/orderStore');
 const { buildOrderPayload, DEFAULT_TAX_RATE } = require('../utils/cartHelpers');
 const { getCartFromSession } = require('../utils/cartSession');
-const { getMenuItems } = require('../utils/menuStore');
+const { getMenuItems, getAvailableMenuItems } = require('../utils/menuStore');
 
 // Home page
 router.get('/', (req, res) => {
-  const menuItems = getMenuItems();
+  const menuItems = getAvailableMenuItems();
   res.render('index', {
     title: 'Cowabunga Pizza',
     heroTagline: 'Powered by pizza. Crafted for legends.',
@@ -21,7 +21,7 @@ router.get('/', (req, res) => {
 router.get('/menu', (req, res) => {
   res.render('menu', {
     title: 'Menu',
-    menuItems: getMenuItems(),
+    menuItems: getAvailableMenuItems(),
   });
 });
 
