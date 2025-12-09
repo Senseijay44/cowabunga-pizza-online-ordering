@@ -1,4 +1,5 @@
 // utils/menuConfigStore.js
+const { db } = require('../db');
 const menuConfig = require('../config/menuConfig');
 
 const VALID_CATEGORIES = ['sizes', 'bases', 'sauces', 'cheeses', 'toppings'];
@@ -6,12 +7,85 @@ const VALID_CATEGORIES = ['sizes', 'bases', 'sauces', 'cheeses', 'toppings'];
 const cloneWithAvailability = (items = []) =>
   items.map((item) => ({ ...item, isAvailable: item.isAvailable !== false }));
 
-const state = {
+const DEFAULT_CONFIG = {
   sizes: cloneWithAvailability(menuConfig.SIZES),
   bases: cloneWithAvailability(menuConfig.BASES),
   sauces: cloneWithAvailability(menuConfig.SAUCES),
   cheeses: cloneWithAvailability(menuConfig.CHEESES),
   toppings: cloneWithAvailability(menuConfig.TOPPINGS),
+};
+
+const cloneConfig = (config) => ({
+  sizes: (config?.sizes || []).map((item) => ({ ...item })),
+  bases: (config?.bases || []).map((item) => ({ ...item })),
+  sauces: (config?.sauces || []).map((item) => ({ ...item })),
+  cheeses: (config?.cheeses || []).map((item) => ({ ...item })),
+  toppings: (config?.toppings || []).map((item) => ({ ...item })),
+});
+
+const sanitizeConfig = (config) => {
+  const safeConfig = config && typeof config === 'object' ? config : {};
+  return {
+    sizes: cloneWithAvailability(
+      Array.isArray(safeConfig.sizes) && safeConfig.sizes.length
+        ? safeConfig.sizes
+        : DEFAULT_CONFIG.sizes,
+    ),
+    bases: cloneWithAvailability(
+      Array.isArray(safeConfig.bases) && safeConfig.bases.length
+        ? safeConfig.bases
+        : DEFAULT_CONFIG.bases,
+    ),
+    sauces: cloneWithAvailability(
+      Array.isArray(safeConfig.sauces) && safeConfig.sauces.length
+        ? safeConfig.sauces
+        : DEFAULT_CONFIG.sauces,
+    ),
+    cheeses: cloneWithAvailability(
+      Array.isArray(safeConfig.cheeses) && safeConfig.cheeses.length
+        ? safeConfig.cheeses
+        : DEFAULT_CONFIG.cheeses,
+    ),
+    toppings: cloneWithAvailability(
+      Array.isArray(safeConfig.toppings) && safeConfig.toppings.length
+        ? safeConfig.toppings
+        : DEFAULT_CONFIG.toppings,
+    ),
+  };
+};
+
+const persistConfigToDb = (config) => {
+  try {
+    db.prepare(
+      `INSERT INTO builder_config (id, config_json)
+       VALUES (1, ?)
+       ON CONFLICT(id) DO UPDATE SET config_json = excluded.config_json`,
+    ).run(JSON.stringify(config));
+  } catch (err) {
+    console.warn('Warning: unable to save builder configuration to database.', err);
+  }
+};
+
+const loadConfigFromDb = () => {
+  try {
+    const row = db.prepare('SELECT config_json FROM builder_config WHERE id = 1').get();
+    if (!row?.config_json) {
+      throw new Error('Missing builder_config row');
+    }
+
+    const parsed = JSON.parse(row.config_json);
+    return sanitizeConfig(parsed);
+  } catch (err) {
+    console.warn('Warning: loading builder configuration failed, using defaults.', err);
+    persistConfigToDb(DEFAULT_CONFIG);
+    return sanitizeConfig(DEFAULT_CONFIG);
+  }
+};
+
+let state = loadConfigFromDb();
+
+const persistCurrentState = () => {
+  persistConfigToDb(state);
 };
 
 const priceKeyForCategory = (category) => {
@@ -49,13 +123,15 @@ const generateId = (category, name) => {
   return slug;
 };
 
-const getAllMenuConfig = () => ({
-  sizes: state.sizes.map(cloneItem),
-  bases: state.bases.map(cloneItem),
-  sauces: state.sauces.map(cloneItem),
-  cheeses: state.cheeses.map(cloneItem),
-  toppings: state.toppings.map(cloneItem),
-});
+const getBuilderConfig = () => cloneConfig(state);
+
+const updateBuilderConfig = (newConfig) => {
+  state = sanitizeConfig(newConfig);
+  persistCurrentState();
+  return getBuilderConfig();
+};
+
+const getAllMenuConfig = () => getBuilderConfig();
 
 const getAvailableMenuConfig = () => ({
   sizes: state.sizes.filter((item) => item.isAvailable !== false).map(cloneItem),
@@ -107,6 +183,8 @@ const upsertCategoryItem = (category, { id, name, price, isAvailable = true }) =
     items.push(updated);
   }
 
+  persistCurrentState();
+
   return { ...updated };
 };
 
@@ -118,10 +196,13 @@ const deleteCategoryItem = (category, id) => {
   if (index === -1) return false;
 
   items.splice(index, 1);
+  persistCurrentState();
   return true;
 };
 
 module.exports = {
+  getBuilderConfig,
+  updateBuilderConfig,
   getAllMenuConfig,
   getAvailableMenuConfig,
   getCategoryItems,
