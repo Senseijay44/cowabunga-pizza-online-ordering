@@ -1,84 +1,175 @@
-# Cowabunga Pizza Online Ordering System
+# 🍕 Cowabunga Pizza Online Ordering System
 
-This is the beginning of our full-stack pizza ordering website for CS492.  
-We built the planning docs in the previous course, and now this repo is the actual working version of the app.
+A full-stack online ordering platform built for CS492 using Node.js, Express, EJS, and SQLite.
+This project was developed across two sprints following Agile/Scrum methodology and now includes:
 
-Right now we have a clean MVP up and running: Express server, EJS layouts, basic routing, and a simple UI skeleton. Nothing fancy yet, but the foundation is solid and everything loads without errors. We’ll build out features a sprint at a time.
+- A complete customer ordering experience
+- Dynamic pizza builder with live pricing
+- Session-backed cart
+- Checkout flow + order persistence
+- Admin dashboard with menu management, builder config editing, order reporting, and CSV export
 
----
+This is a fully working MVP demonstrating real-world full-stack design and implementation.
 
 ## 🚀 Project Setup
-
-### Requirements
-- Node.js (v18+)
+**Requirements**
+- Node.js (v18+ recommended)
 - npm
+- SQLite (included with better-sqlite3—no manual DB setup required)
 
-### Install dependencies
+**Install dependencies**
 npm install
 
-### Run the server in dev mode
+**Development mode**
 npm run dev
 
 Server runs at:
 http://localhost:3000
 
+## 🔐 Environment Variables (Required for Admin Login)
+
+Create a .env file in the project root:
+
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=<bcrypt_hash_here>
+
+You can generate a hash using:
+
+node
+const bcrypt = require('bcrypt');
+bcrypt.hash('yourpassword', 10).then(console.log);
+
+
+Admin login will not work without these values.
+
 ## 📁 Project Structure
 cowabunga-pizza/
   server.js
+  app.js
+  db.js
   package.json
+  .env (not committed)
+  
   /routes
-    web.js
-    api.js
+    web.js        # Customer pages
+    api.js        # Cart, pricing, menu APIs
+    admin.js      # Admin dashboard + CRUD
+
+  /utils
+    cartHelpers.js
+    cartSession.js
+    orderStore.js
+    menuStore.js
+    menuConfigStore.js  # Builder config (now persisted in SQLite)
+    pizzaPricing.js
+
   /views
     layout.ejs
-    index.ejs
     menu.ejs
-    cart.ejs
     checkout.ejs
-    404.ejs
-    500.ejs
+    confirmation.ejs
+    admin-menu.ejs
+    admin-orders.ejs
+    admin-reports.ejs
+    ...
+  
   /public
     /css
-      styles.css
     /js
-      main.js
-    /img
+      main.js     # Cart logic & builder UI
+      checkout.js
+    /images       # Menu + builder images
 
-- Express + EJS handles server-side rendering
-- express-ejs-layouts gives us a shared layout template
-- public/ holds all static assets
-- routes/ contains all page and API logic
+### 🍕 Customer Features
+✔ Dynamic Menu Page
+- Menu items loaded from SQLite
+- Images, descriptions, categories, and availability flags
+- Admin updates appear instantly
 
-## 🔧 Current MVP Features
-- Working Express server
-- EJS layout system wired correctly
-- Homepage, Menu, Cart, and Checkout pages render
-- Basic styling and layout framework
-- API routes stubbed out and ready for real logic
-- 404 and 500 handlers added
-This is the stable version we’ll build on.
+✔ Custom Pizza Builder
+- Sizes, crusts, sauces, cheeses, toppings
+- Builder config fully editable in admin dashboard
+- Live price recalculation via /api/price
 
-## 🎯 Next Steps (Sprint Goals)
-- Style homepage and menu to look like a real pizza shop
-- Add “Add to Cart” functionality (session-based or local array)
-- Display cart items + totals
-- Build a checkout form UI
-- Implement basic order flow
-- Add real pizza data (JSON or small DB)
+✔ Session-Backed Cart
+- Add preset or custom pizzas
+- Modify quantities
+- Delete items
+- Totals and tax updated instantly
+
+✔ Checkout Flow
+- Server-side validation
+- Order saved to SQLite with item JSON, totals, timestamps
+- Redirect to confirmation screen
+
+### 🛠️ Admin Features
+✔ Secure Login (bcrypt + session)
+- Credentials defined in .env.
+
+✔ Menu Management (CRUD)
+- Add/edit/delete preset pizzas
+- Update prices, descriptions, categories, images
+- Toggle availability
+
+✔ Custom Builder Config Editor
+- Edit sizes, crusts, sauces, cheeses, and toppings
+- Config changes stored in SQLite
+- Customer builder updates instantly
+
+✔ Orders Dashboard
+- Displays all orders with timestamps + totals
+- Status field ready for extension
+
+✔ Reports + CSV Export
+- Revenue and item counts
+- Downloadable CSV from /api/admin/report
+
+## 🧱 Technical Architecture Overview
+**Backend**
+- Node.js + Express
+- EJS templates for UI rendering
+- Express sessions for cart storage
+- RESTful API for cart, pricing, and admin actions
+
+**Database**
+- SQLite via better-sqlite3
+- Tables:
+  - menu_items
+  - orders
+  - builder_config (JSON persisted builder options)
+
+**Frontend**
+- Javascript-driven cart
+- Dynamic builder modal
+- Fetch-based API interactions
+- Real-time subtotal/tax/total updates
+
+## 🧪 Testing & Demo Notes
+- Customer flow: menu → cart → checkout → confirmation
+- Admin flow: login → orders → reports → menu editor → reload menu
+- Builder config and menu edits persist across server restarts
+- Make sure /public/images/ contains valid image files for menu items
 
 ## 👥 Team Workflow
-We’re using GitHub for version control.
-Make sure to:
-1. Pull before you start
-git pull
-2. Create a feature branch
-git checkout -b feature/your-feature-name
-3. Add commits, then push:
-git push origin feature/your-feature-name
-4. Open a Pull Request so changes stay clean.
+- GitHub for version control
+- Feature branches + PR reviews
+- Slack + Jira for sprint management
+- Two sprints completed with retrospectives
 
-Even if we’re a smaller team this term, the repo history will reflect solid work.
+## 📝 Next Steps / Future Enhancements
+- Stripe integration for real payments
+- Order tracking UI
+- Email/SMS confirmations
+- Inventory-based item availability
+- Multi-location support
 
-## 📝 Notes
+## 🎉 Summary
+Cowabunga Pizza is now a fully functional full-stack ordering system that demonstrates:
 
-This project is built the same way a real dev team would do it. The goal isn’t just to finish — it's to create something that actually looks and feels professional. We'll keep improving it each week until it resembles a legit small-business ordering site.
+- Real-world web architecture
+- Persistent data flows
+- Dynamic configuration management
+- Admin + customer experience integration
+- Robust Agile development practices
+
+This MVP is ready for live demo and extension.
