@@ -12,6 +12,7 @@
   <% } %>
 
   <% const isEditingPreset = editing && editing.section === 'preset'; %>
+  <% const presetPlaceholder = '/images/pizza-1.png'; %>
   <section class="admin-card">
     <div class="admin-section-header">
       <div>
@@ -47,6 +48,7 @@
             value="<%= isEditingPreset ? (editing.item.imageUrl || '') : '' %>"
             placeholder="/images/pizza-classic.png"
           >
+          <small class="admin-help">Use a path under /public/images, e.g., "/images/margherita.png".</small>
         </label>
         <label class="admin-field">
           <span class="admin-label">Category</span>
@@ -99,11 +101,11 @@
             <% presetPizzas.forEach((item) => { %>
               <tr>
                 <td class="admin-thumb">
-                  <% if (item.imageUrl) { %>
-                    <img src="<%= item.imageUrl %>" alt="<%= item.name %>" class="admin-thumb-img">
-                  <% } else { %>
-                    <span class="muted">—</span>
-                  <% } %>
+                  <img
+                    src="<%= item.imageUrl || presetPlaceholder %>"
+                    alt="<%= item.name %>"
+                    class="admin-thumb-img"
+                  >
                 </td>
                 <td><strong><%= item.name %></strong></td>
                 <td><%= item.category || '—' %></td>

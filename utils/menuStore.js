@@ -9,13 +9,29 @@ let seeded = false;
 const normalizeCategory = (category) =>
   MENU_ITEM_CATEGORIES.includes(category) ? category : 'pizza';
 
+const normalizeImageUrl = (value, { allowEmpty = false } = {}) => {
+  if (value === undefined || value === null) return allowEmpty ? '' : undefined;
+
+  const trimmed = String(value).trim();
+  if (!trimmed) return allowEmpty ? '' : undefined;
+
+  // Absolute URLs (http/https) and leading slashes are left as-is
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  // Normalize relative paths to live under the /images public directory
+  const sanitized = trimmed.replace(/^\.?(\/)+/, '');
+  return `/${sanitized}`;
+};
+
 const mapRowToItem = (row) => ({
   id: row.id,
   name: row.name,
   description: row.description || '',
   price: Number(row.price) || 0,
   category: normalizeCategory(row.category),
-  imageUrl: row.image_url || '',
+  imageUrl: normalizeImageUrl(row.image_url, { allowEmpty: true }),
   isAvailable: row.is_active !== 0,
 });
 
@@ -56,6 +72,7 @@ const addMenuItem = ({
   imageUrl = '',
 }) => {
   ensureSeeded();
+  const normalizedImageUrl = normalizeImageUrl(imageUrl, { allowEmpty: true });
   const info = db
     .prepare(
       `
@@ -68,7 +85,7 @@ const addMenuItem = ({
       description,
       price: Number(price) || 0,
       category: normalizeCategory(category),
-      image_url: imageUrl,
+      image_url: normalizedImageUrl || '',
       is_active: isAvailable ? 1 : 0,
     });
 
@@ -83,6 +100,8 @@ const updateMenuItem = (id, updates = {}) => {
   const existing = getMenuItemById(numericId);
   if (!existing) return null;
 
+  const normalizedImageUrl = normalizeImageUrl(updates.imageUrl, { allowEmpty: false });
+
   const merged = {
     ...existing,
     ...updates,
@@ -90,7 +109,7 @@ const updateMenuItem = (id, updates = {}) => {
       updates.category !== undefined
         ? normalizeCategory(updates.category)
         : existing.category,
-    imageUrl: updates.imageUrl !== undefined ? updates.imageUrl : existing.imageUrl,
+    imageUrl: normalizedImageUrl !== undefined ? normalizedImageUrl : existing.imageUrl,
     isAvailable:
       updates.isAvailable === undefined ? existing.isAvailable !== false : Boolean(updates.isAvailable),
     price: updates.price !== undefined ? Number(updates.price) : existing.price,
