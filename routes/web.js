@@ -32,6 +32,12 @@ router.get('/cart', (req, res) => {
 
 // GET /checkout - show checkout form
 router.get('/checkout', (req, res) => {
+  const sessionCart = getCartFromSession(req);
+
+  if (!sessionCart || sessionCart.length === 0) {
+    return res.redirect('/menu?emptyCart=1');
+  }
+
   res.render('checkout', {
     title: 'Checkout',
     errorMessage: null,
@@ -45,6 +51,10 @@ router.post('/checkout', (req, res) => {
 
     const sessionCart = getCartFromSession(req);
 
+    if (!sessionCart || sessionCart.length === 0) {
+      return res.redirect('/menu?emptyCart=1');
+    }
+
     const { order, error } = buildOrderPayload({
       customer: { name, phone, address, email },
       cart: sessionCart,
@@ -54,11 +64,12 @@ router.post('/checkout', (req, res) => {
 
     if (error) {
       const isEmptyCart = error === 'Cart is empty or invalid';
+      if (isEmptyCart) {
+        return res.redirect('/menu?emptyCart=1');
+      }
       return res.status(400).render('checkout', {
         title: 'Checkout',
-        errorMessage: isEmptyCart
-          ? 'Your cart is empty. Please add items from the menu before checking out.'
-          : error,
+        errorMessage: error,
       });
     }
 

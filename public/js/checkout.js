@@ -4,11 +4,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const TAX_RATE = window?.CB_APP_CONFIG?.taxRate ?? 0.086;
   const summaryEl = document.getElementById('checkout-summary-placeholder');
   const cartJsonInput = document.getElementById('cartJson');
+  const submitButton = document.getElementById('checkout-submit-btn');
 
   if (!summaryEl || !cartJsonInput) {
     console.warn('Checkout summary or cartJson input not found on page.');
     return;
   }
+
+  const setSubmitEnabled = (isEnabled) => {
+    if (!submitButton) return;
+    submitButton.disabled = !isEnabled;
+    submitButton.setAttribute('aria-disabled', String(!isEnabled));
+    submitButton.classList.toggle('btn-disabled', !isEnabled);
+  };
 
   try {
     const res = await fetch('/api/cart', {
@@ -19,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!res.ok) {
       console.error('Failed to fetch cart for checkout:', res.status);
+      setSubmitEnabled(false);
       summaryEl.innerHTML = `
         <p>We had trouble loading your cart. Try going back to the menu and rebuilding it.</p>
       `;
@@ -50,12 +59,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     cartJsonInput.value = JSON.stringify(items);
 
     if (items.length === 0) {
+      setSubmitEnabled(false);
       summaryEl.innerHTML = `
         <p>Your cart is empty.</p>
         <p><a href="/menu" class="btn-secondary">Back to menu</a></p>
       `;
       return;
     }
+
+    setSubmitEnabled(true);
 
     // Build a little HTML summary
     const itemsHtml = items
@@ -85,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   } catch (err) {
     console.error('Error loading cart for checkout:', err);
+    setSubmitEnabled(false);
     summaryEl.innerHTML = `
       <p>Something went wrong loading your cart.</p>
       <p><a href="/menu" class="btn-secondary">Back to menu</a></p>
