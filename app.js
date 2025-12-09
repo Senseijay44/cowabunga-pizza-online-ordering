@@ -7,6 +7,7 @@ const session = require('express-session');
 const webRoutes = require('./routes/web');
 const apiRoutes = require('./routes/api');
 const adminRoutes = require('./routes/admin');
+const { DEFAULT_TAX_RATE } = require('./utils/cartHelpers');
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use((req, res, next) => {
   res.locals.isAdmin = Boolean(req.session && req.session.isAdmin);
   res.locals.isAdminRoute = req.path.startsWith('/admin');
   res.locals.currentPath = req.path;
+  res.locals.taxRate = DEFAULT_TAX_RATE;
   next();
 });
 

@@ -393,13 +393,14 @@ router.post('/cart/items', express.json(), (req, res) => {
         cart.push(newItem);
       }
 
-      const { subtotal, total } = computeTotals(cart);
+      const { subtotal, tax, total } = computeTotals(cart, DEFAULT_TAX_RATE);
 
       return res.status(201).json({
         message: 'Custom pizza added to cart',
         cart,
         item: newItem,
         subtotal,
+        tax,
         total,
       });
     } catch (err) {
@@ -450,13 +451,14 @@ router.post('/cart/items', express.json(), (req, res) => {
     cart.push(newItem);
   }
 
-  const { subtotal, total } = computeTotals(cart);
+  const { subtotal, tax, total } = computeTotals(cart, DEFAULT_TAX_RATE);
 
   return res.status(201).json({
     message: 'Item added to cart',
     cart,
     item: newItem,
     subtotal,
+    tax,
     total,
   });
 });
@@ -494,12 +496,13 @@ router.patch('/cart/items/:id', (req, res) => {
     cart[index].qty = newQty;
   }
 
-  const { subtotal, total } = computeTotals(cart);
+  const { subtotal, tax, total } = computeTotals(cart, DEFAULT_TAX_RATE);
 
   return res.json({
     message: 'Cart item updated',
     cart,
     subtotal,
+    tax,
     total,
   });
 });
@@ -516,12 +519,13 @@ router.delete('/cart/items/:id', (req, res) => {
 
   cart.splice(index, 1);
 
-  const { subtotal, total } = computeTotals(cart);
+  const { subtotal, tax, total } = computeTotals(cart, DEFAULT_TAX_RATE);
 
   return res.json({
     message: 'Cart item removed',
     cart,
     subtotal,
+    tax,
     total,
   });
 });
@@ -529,11 +533,12 @@ router.delete('/cart/items/:id', (req, res) => {
 // GET /api/cart – return full cart
 router.get('/cart', (req, res) => {
   const cart = getCartFromSession(req);
-  const { subtotal, total } = computeTotals(cart);
+  const { subtotal, tax, total } = computeTotals(cart, DEFAULT_TAX_RATE);
 
   return res.json({
     items: cart,
     subtotal,
+    tax,
     total,
   });
 });
