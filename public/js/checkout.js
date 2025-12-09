@@ -1,6 +1,7 @@
 // public/js/checkout.js
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const TAX_RATE = window?.CB_APP_CONFIG?.taxRate ?? 0.086;
   const summaryEl = document.getElementById('checkout-summary-placeholder');
   const cartJsonInput = document.getElementById('cartJson');
 
@@ -26,8 +27,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const data = await res.json();
     const items = data.items || [];
-    const subtotal = data.subtotal || 0;
-    const total = data.total || 0;
+    const subtotalFromApi = Number(data.subtotal);
+    const taxFromApi = Number(data.tax);
+    const totalFromApi = Number(data.total);
+
+    const computedTotals = items.reduce(
+      (acc, item) => {
+        const lineTotal = (Number(item.price) * Number(item.qty || 1)) || 0;
+        acc.subtotal += lineTotal;
+        return acc;
+      },
+      { subtotal: 0 }
+    );
+    computedTotals.tax = computedTotals.subtotal * TAX_RATE;
+    computedTotals.total = computedTotals.subtotal + computedTotals.tax;
+
+    const subtotal = Number.isFinite(subtotalFromApi) ? subtotalFromApi : computedTotals.subtotal;
+    const tax = Number.isFinite(taxFromApi) ? taxFromApi : computedTotals.tax;
+    const total = Number.isFinite(totalFromApi) ? totalFromApi : computedTotals.total;
 
     // Store cart items as JSON for the server-side /checkout POST
     cartJsonInput.value = JSON.stringify(items);
@@ -61,8 +78,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       </ul>
       <div class="summary-totals">
         <p><strong>Subtotal:</strong> $${Number(subtotal).toFixed(2)}</p>
-        <p><strong>Estimated Total:</strong> $${Number(total).toFixed(2)}</p>
-        <p class="summary-note">Final total is confirmed on the next screen.</p>
+        <p><strong>Tax:</strong> $${Number(tax).toFixed(2)}</p>
+        <p><strong>Total:</strong> $${Number(total).toFixed(2)}</p>
+        <p class="summary-note">Totals are confirmed by the server at checkout.</p>
       </div>
     `;
   } catch (err) {

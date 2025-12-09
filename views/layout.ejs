@@ -40,6 +40,11 @@
     <p>&copy; <%= new Date().getFullYear() %> Cowabunga Pizza. Powered by pizza.</p>
   </footer>
 
+    <script>
+      window.CB_APP_CONFIG = Object.assign({}, window.CB_APP_CONFIG, {
+        taxRate: <%- JSON.stringify(typeof taxRate === 'number' ? taxRate : 0) %>,
+      });
+    </script>
     <script src="/js/main.js"></script>
   <script src="/js/builder.js"></script>
 </body>

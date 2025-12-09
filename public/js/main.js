@@ -1,6 +1,6 @@
 console.log('Cowabunga Pizza client script loaded with cart + builder.');
 
-const TAX_RATE = 0.089;
+const TAX_RATE = window?.CB_APP_CONFIG?.taxRate ?? 0.086;
 
 // -------------------------------------------------------------
 //  TOAST SYSTEM  (inline, self-contained)
@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // CART STATE
   // -------------------------------------------------------------
   const cart = [];
+  let cartTotals = { itemCount: 0, subtotal: 0, tax: 0, total: 0 };
 
   function money(n) {
     return `$${n.toFixed(2)}`;
@@ -148,12 +149,34 @@ document.addEventListener('DOMContentLoaded', () => {
     let itemCount = 0;
     let subtotal = 0;
     cart.forEach(item => {
-      itemCount += item.qty;
-      subtotal += item.price * item.qty;
+      itemCount += Number(item.qty || 0);
+      subtotal += Number(item.price || 0) * Number(item.qty || 1);
     });
-    const estimatedTax = subtotal * TAX_RATE;
-    const total = subtotal + estimatedTax;
-    return { itemCount, subtotal, estimatedTax, total };
+    const tax = subtotal * TAX_RATE;
+    const total = subtotal + tax;
+    return { itemCount, subtotal, tax, total };
+  }
+
+  function syncCartStateFromResponse(data = {}) {
+    const incomingItems = data.items || data.cart || [];
+
+    cart.length = 0;
+    (incomingItems || []).forEach(item => cart.push(item));
+
+    const fallbackTotals = computeCartTotals();
+
+    const subtotal = Number(data.subtotal);
+    const tax = Number(data.tax);
+    const total = Number(data.total);
+
+    cartTotals = {
+      itemCount:
+        (incomingItems || []).reduce((sum, item) => sum + Number(item.qty || 0), 0) ||
+        fallbackTotals.itemCount,
+      subtotal: Number.isFinite(subtotal) ? subtotal : fallbackTotals.subtotal,
+      tax: Number.isFinite(tax) ? tax : fallbackTotals.tax,
+      total: Number.isFinite(total) ? total : fallbackTotals.total,
+    };
   }
 
   function isCartDrawerOpen() {
@@ -171,13 +194,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateCartSummaryUI() {
-    const { itemCount, subtotal, estimatedTax, total } = computeCartTotals();
+    const totals = cartTotals || computeCartTotals();
+    const { itemCount, subtotal, tax, total } = totals;
 
     if (cartCountEl) {
       cartCountEl.textContent = itemCount === 1 ? '1 item' : `${itemCount} items`;
     }
     if (cartSubtotalEl) cartSubtotalEl.textContent = money(subtotal);
-    if (cartTaxEl) cartTaxEl.textContent = money(estimatedTax);
+    if (cartTaxEl) cartTaxEl.textContent = money(tax);
     if (cartTotalEl) cartTotalEl.textContent = money(total);
 
     if (cartBarLabelEl) {
@@ -248,15 +272,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/cart');
       if (!res.ok) {
         console.error('Failed to load cart:', res.status);
+        cartTotals = computeCartTotals();
         renderCart();
         return;
       }
       const data = await res.json();
-      cart.length = 0;
-      (data.items || []).forEach(item => cart.push(item));
+      syncCartStateFromResponse(data);
       renderCart();
     } catch (err) {
       console.error('Error loading cart:', err);
+      cartTotals = computeCartTotals();
       renderCart();
     }
   }
@@ -279,8 +304,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const data = await res.json();
-      cart.length = 0;
-      (data.cart || []).forEach(item => cart.push(item));
+      syncCartStateFromResponse({
+        ...data,
+        items: data.cart,
+      });
 
       renderCart();
       showToast('Added to cart!', 'success');
@@ -307,8 +334,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const data = await res.json();
-      cart.length = 0;
-      (data.cart || []).forEach(item => cart.push(item));
+      syncCartStateFromResponse({
+        ...data,
+        items: data.cart,
+      });
       renderCart();
     } catch (err) {
       console.error('Error updating cart:', err);
@@ -330,8 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const data = await res.json();
-      cart.length = 0;
-      (data.cart || []).forEach(item => cart.push(item));
+      syncCartStateFromResponse({
+        ...data,
+        items: data.cart,
+      });
       renderCart();
     } catch (err) {
       console.error('Error removing item:', err);
