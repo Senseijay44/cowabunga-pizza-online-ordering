@@ -29,13 +29,13 @@
 
     <!-- Menu Grid -->
     <div class="cb-menu-grid">
-      <% const pizzaImages = ['/images/pizza-1.png', '/images/pizza-2.png', '/images/pizza-3.png']; %>
+      <% const placeholderImage = '/images/pizza-1.png'; %>
 
-      <% menuItems.forEach((item, idx) => { %>
+      <% menuItems.forEach((item) => { %>
         <% const itemCategory = (item.category || 'pizza').toLowerCase(); %>
         <article class="cb-card" data-category="<%= itemCategory %>">
           <img
-            src="<%= item.imageUrl || pizzaImages[idx % pizzaImages.length] %>"
+            src="<%= item.imageUrl || placeholderImage %>"
             alt="<%= item.name %>"
             class="cb-card-img"
           />

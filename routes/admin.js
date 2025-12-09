@@ -202,6 +202,7 @@ router.get('/reports', requireAdmin, (req, res) => {
 
 router.post('/menu/preset', requireAdmin, parseForm, (req, res) => {
   const { id, name, description = '', price, isAvailable, imageUrl = '', category } = req.body || {};
+  const trimmedImageUrl = (imageUrl || '').trim();
 
   if (!name || !price) {
     return res.redirect(
@@ -225,7 +226,7 @@ router.post('/menu/preset', requireAdmin, parseForm, (req, res) => {
       description: description.trim(),
       price: priceNum,
       category: normalizedCategory,
-      imageUrl: imageUrl.trim(),
+      imageUrl: trimmedImageUrl || undefined,
       isAvailable: isAvailable === 'on',
     });
     return res.redirect(buildRedirect({ message: 'Preset pizza updated.' }));
@@ -236,7 +237,7 @@ router.post('/menu/preset', requireAdmin, parseForm, (req, res) => {
     description: description.trim(),
     price: priceNum,
     category: normalizedCategory,
-    imageUrl: imageUrl.trim(),
+    imageUrl: trimmedImageUrl,
     isAvailable: isAvailable === 'on',
   });
 
