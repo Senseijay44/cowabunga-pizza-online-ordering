@@ -5,15 +5,13 @@ const router = express.Router();
 const { getOrderById, createOrder } = require('../utils/orderStore');
 const { buildOrderPayload, DEFAULT_TAX_RATE } = require('../utils/cartHelpers');
 const { getCartFromSession } = require('../utils/cartSession');
-const { getMenuItems, getAvailableMenuItems } = require('../utils/menuStore');
+const { getAvailableMenuItems } = require('../utils/menuStore');
 
 // Home page
 router.get('/', (req, res) => {
-  const menuItems = getAvailableMenuItems();
   res.render('index', {
     title: 'Cowabunga Pizza',
     heroTagline: 'Powered by pizza. Crafted for legends.',
-    featured: menuItems.slice(0, 2),
   });
 });
 
