@@ -4,6 +4,8 @@
 </section>
 
 <div class="admin-main">
+  <% const formatCurrency = (value) => { const num = Number(value) || 0; return `$${(Math.round(num * 100) / 100).toFixed(2)}`; }; %>
+  <% const describeItemType = (item) => { if (!item) return 'Item'; if (item.type) return item.type === 'custom' ? 'Custom' : item.type; return item.meta ? 'Custom' : 'Preset'; }; %>
   <% if (!orders || orders.length === 0) { %>
     <div class="admin-card admin-empty-state">
       <p>No orders yet. Go place one from the menu to see it here.</p>
@@ -26,6 +28,7 @@
               <th>Customer</th>
               <th>Contact</th>
               <th>Type</th>
+              <th>Items</th>
               <th>Status</th>
               <th>Update Status</th>
               <th>Total</th>
@@ -60,6 +63,36 @@
                 <td class="admin-fulfillment">
                   <strong><%= order.fulfillmentMethod === 'delivery' ? 'Delivery' : 'Pickup' %></strong>
                 </td>
+                <td class="admin-order-items">
+                  <details>
+                    <summary>View items (<%= Array.isArray(order.items) ? order.items.length : 0 %>)</summary>
+                    <ul class="admin-order-item-list">
+                      <% if (Array.isArray(order.items) && order.items.length > 0) { %>
+                        <% order.items.forEach((item) => { const qty = Number(item?.qty || 0); const price = Number(item?.price || 0); const lineTotal = Math.round(price * qty * 100) / 100; %>
+                          <li class="admin-order-item">
+                            <div class="admin-order-item-header">
+                              <div>
+                                <strong><%= item?.name || 'Item' %></strong>
+                                <span class="admin-order-item-type">(<%= describeItemType(item) %>)</span>
+                              </div>
+                              <div class="admin-order-item-line-total"><%= formatCurrency(lineTotal || price * qty) %></div>
+                            </div>
+                            <% if (item?.meta) { %>
+                              <div class="admin-order-item-meta"><%= item.meta %></div>
+                            <% } %>
+                            <div class="admin-order-item-pricing">
+                              <span>Qty: <%= qty %></span>
+                              <span>Unit: <%= formatCurrency(price) %></span>
+                              <span>Line: <%= formatCurrency(lineTotal || price * qty) %></span>
+                            </div>
+                          </li>
+                        <% }); %>
+                      <% } else { %>
+                        <li class="admin-order-item muted">No items available</li>
+                      <% } %>
+                    </ul>
+                  </details>
+                </td>
                 <td class="order-status-cell">
                   <%= order.status %>
                 </td>
@@ -74,7 +107,7 @@
                 </td>
                 <td class="admin-order-total">
                   <% if (order.totals && typeof order.totals.total === 'number') { %>
-                    $<%= order.totals.total.toFixed(2) %>
+                    <%= formatCurrency(order.totals.total) %>
                   <% } else { %>
                     -
                   <% } %>
