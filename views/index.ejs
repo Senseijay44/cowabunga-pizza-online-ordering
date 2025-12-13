@@ -11,16 +11,45 @@
   </div>
 </section>
 
-<section class="featured">
-  <h2>Featured Pies</h2>
-  <div class="card-grid">
-    <% featured.forEach(item => { %>
-      <article class="card">
-        <h3><%= item.name %></h3>
-        <p><%= item.description %></p>
-        <p class="price">$<%= item.price.toFixed(2) %></p>
-        <a href="/menu" class="btn-secondary">Add to Order</a>
-      </article>
-    <% }) %>
+<section class="about-section">
+  <div class="about-intro">
+    <h2>About Cowabunga Pizza</h2>
+    <p>
+      Cowabunga Pizza started as a late-night experiment to fuel epic adventures and turned into a citywide obsession.
+      We fire every pie with comic-book courage, celebrate bold toppings, and keep the vibes friendly for heroes of every age.
+      Grab a slice, share a laugh, and let our crew handle the rest.
+    </p>
+  </div>
+
+  <div class="about-grid">
+    <article class="about-card">
+      <h3>What we offer</h3>
+      <ul class="about-list">
+        <li>Signature pies loaded with our favorite sewer-to-skyline inspirations.</li>
+        <li>Custom builder so you can design a pizza worthy of your squad.</li>
+        <li>Sides, sweets, and drinks that keep the party rolling.</li>
+      </ul>
+    </article>
+
+    <article class="about-card">
+      <h3>Hours</h3>
+      <p>Sun–Thu: 11:00 AM – 9:00 PM</p>
+      <p>Fri–Sat: 11:00 AM – 11:00 PM</p>
+    </article>
+
+    <article class="about-card">
+      <h3>Location</h3>
+      <p>Neighborhood hub with pickup, delivery, and a cozy corner for quick bites.</p>
+    </article>
+
+    <article class="about-card">
+      <h3>Contact</h3>
+      <p>Phone: (555) 010-PEP</p>
+      <p>Email: pie@cowabungapizza.test</p>
+    </article>
+  </div>
+
+  <div class="about-cta">
+    <a href="/menu" class="btn-primary">Order Now</a>
   </div>
 </section>
