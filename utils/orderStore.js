@@ -35,8 +35,20 @@ const computeItemCount = (items) =>
     ? items.reduce((sum, item) => sum + Number(item?.qty || 0), 0)
     : 0;
 
+const parseItems = (itemsJson, orderId = null) => {
+  if (!itemsJson) return [];
+
+  try {
+    const parsed = JSON.parse(itemsJson);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.warn('Failed to parse order items_json for order', orderId, err);
+    return [];
+  }
+};
+
 const mapRowToOrder = (row) => {
-  const items = row.items_json ? JSON.parse(row.items_json) : [];
+  const items = parseItems(row.items_json, row?.id);
   return {
     id: row.id,
     customer: {
